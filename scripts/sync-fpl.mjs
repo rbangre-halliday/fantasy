@@ -181,19 +181,34 @@ async function syncHistory (players) {
         const past = summary.history_past ?? []
         // history_past is chronological; the last entry is the most recent season.
         const prev = past.length ? past[past.length - 1].total_points : 0
-        out.push({ id: p.id, prev_season_points: prev })
+        out.push({ id: p.id, prev: prev })
       } catch {
-        out.push({ id: p.id, prev_season_points: 0 })
+        out.push({ id: p.id, prev: 0 })
       }
       await new Promise(r => setTimeout(r, 60)) // be a good citizen
     }
   }))
 
-  for (let i = 0; i < out.length; i += 200) {
-    const { error } = await db.from('epl_players').upsert(out.slice(i, i + 200), { onConflict: 'id' })
-    if (error) throw new Error(`history upsert: ${error.message}`)
+  // These rows already exist, so this is an UPDATE, not an upsert: a partial
+  // upsert would still have to satisfy the NOT NULL columns it isn't sending.
+  // One request per distinct score keeps it to a couple of dozen round trips.
+  const byScore = new Map()
+  for (const { id, prev } of out) {
+    if (!byScore.has(prev)) byScore.set(prev, [])
+    byScore.get(prev).push(id)
   }
-  log(`History: updated ${out.length} players.`)
+
+  let done = 0
+  for (const [prev, ids] of byScore) {
+    for (let i = 0; i < ids.length; i += 300) {
+      const { error } = await db.from('epl_players')
+        .update({ prev_season_points: prev })
+        .in('id', ids.slice(i, i + 300))
+      if (error) throw new Error(`history update: ${error.message}`)
+    }
+    done += ids.length
+  }
+  log(`History: updated ${done} players across ${byScore.size} distinct totals.`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
