@@ -28,7 +28,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22+, not 20: supabase-js reaches for a native WebSocket at import
+          # time and Node 20 doesn't have one.
+          node-version: 22
           cache: npm
 
       - run: npm ci
