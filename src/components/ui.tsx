@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import type { Position } from '../lib/types'
 
@@ -50,7 +51,11 @@ export function Sheet ({
     }
   }, [onClose])
 
-  return (
+  // Portalled to <body> on purpose. `position: fixed` is relative to the
+  // nearest ancestor with a transform, filter or backdrop-filter — not always
+  // the viewport — so a modal rendered in place can silently end up sized to
+  // its parent and scrolled off screen.
+  return createPortal(
     <div className="scrim" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-head">
@@ -60,7 +65,8 @@ export function Sheet ({
         <div className="sheet-body">{children}</div>
         {footer && <div className="sheet-foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

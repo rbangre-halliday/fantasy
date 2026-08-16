@@ -71,7 +71,7 @@ export default function SquadPitch ({
           /* A real pitch is taller than it is wide; holding the ratio is what
              stops the centre circle stretching into an ellipse. */
           aspect-ratio: ${cap > 11 ? '0.86' : '0.76'};
-          min-height: ${cap > 11 ? '360px' : '300px'};
+          min-height: ${cap > 11 ? '330px' : '300px'};
           border: 1px solid var(--line);
           border-radius: var(--radius);
           background:
@@ -117,14 +117,15 @@ export default function SquadPitch ({
           justify-content: center;
           gap: 1px;
           border-radius: 8px;
-          border: 1px dashed var(--line-2);
-          background: transparent;
+          border: 1px dashed var(--line);
+          background: rgba(255,255,255,.012);
           transition: border-color .25s var(--ease), background .25s var(--ease);
         }
         .slot.filled {
           border-style: solid;
-          border-color: var(--line-bright);
-          background: var(--surface-2);
+          border-color: var(--accent-edge);
+          background: linear-gradient(180deg, var(--accent-wash), transparent), var(--surface-2);
+          box-shadow: 0 4px 18px -8px rgba(124, 92, 255, .7);
           animation: slotIn .32s var(--ease) both;
         }
         .slot-name {
@@ -149,7 +150,7 @@ export default function SquadPitch ({
           font-weight: 600;
           letter-spacing: .08em;
           color: var(--text-3);
-          opacity: .55;
+          opacity: .42;
         }
         @keyframes slotIn {
           from { opacity: 0; transform: scale(.9); }

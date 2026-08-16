@@ -313,7 +313,7 @@ export default function DraftRoom () {
             {picks.length === 0 ? (
               <div className="empty">No picks yet.</div>
             ) : (
-              <ul className="list">
+              <ul className="list scroll-pane" style={{ maxHeight: 360 }}>
                 {[...picks].reverse().slice(0, 40).map(pk => {
                   const player = players?.find(p => p.id === pk.player_id)
                   return (

@@ -12,31 +12,36 @@
    ========================================================================== */
 
 :root {
-  /* ---- ground ---- */
-  --bg:          #0A0A0B;
-  --bg-2:        #0E0E10;
-  --surface:     #121215;
-  --surface-2:   #17171B;
-  --surface-3:   #1E1E23;
+  /* ---- ground ----
+     Not neutral black: every surface carries a trace of the violet, which is
+     what stops a dark UI reading as grey and flat. */
+  --bg:          #08080D;
+  --bg-2:        #0C0C14;
+  --surface:     #12121C;
+  --surface-2:   #191926;
+  --surface-3:   #222233;
 
   /* ---- structure ---- */
-  --line:        #212127;
-  --line-2:      #2C2C34;
-  --line-bright: #3A3A45;
+  --line:        #23233A;
+  --line-2:      #2F2F4A;
+  --line-bright: #414163;
 
   /* ---- type ---- */
-  --text:        #F4F4F5;
-  --text-2:      #A8A8B3;
-  --text-3:      #6E6E7B;
+  --text:        #F5F4FF;
+  --text-2:      #A9A7C0;
+  --text-3:      #6E6C8A;
 
   /* ---- primary action ----
-     White, not a brand colour. On a black canvas nothing competes with it,
-     so "the white thing" is always the next step. */
-  --accent:      #FAFAFA;
-  --accent-dim:  #D4D4D8;
-  --accent-ink:  #0A0A0B;
-  --accent-wash: rgba(255, 255, 255, .07);
-  --accent-edge: rgba(255, 255, 255, .24);
+     One saturated violet, used with conviction. It carries every primary
+     action, the live selection, and the glow — so the eye always knows where
+     the app wants it. */
+  --accent:      #7C5CFF;
+  --accent-2:    #9B85FF;
+  --accent-dim:  #5F45D6;
+  --accent-ink:  #FFFFFF;
+  --accent-wash: rgba(124, 92, 255, .14);
+  --accent-edge: rgba(124, 92, 255, .48);
+  --accent-glow: 0 8px 32px -8px rgba(124, 92, 255, .55);
 
   /* ---- state, and only state ---- */
   --live:        #FF5C45;
@@ -105,8 +110,10 @@ body {
 
   /* One very soft bloom behind the top of the page. Barely visible, but it
      stops the black reading as flat card stock. */
+  /* The violet bloom is what makes the dark feel lit rather than switched off. */
   background-image:
-    radial-gradient(1100px 620px at 50% -18%, rgba(255, 255, 255, .05), transparent 72%);
+    radial-gradient(1000px 560px at 50% -14%, rgba(124, 92, 255, .20), transparent 70%),
+    radial-gradient(700px 420px at 92% 8%, rgba(72, 200, 255, .07), transparent 66%);
   background-attachment: fixed;
   background-repeat: no-repeat;
 }
@@ -203,15 +210,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 @media (min-width: 940px) { .scroll-pane { max-height: calc(100vh - 300px); } }
 
-/* A block that pins below the masthead as the page scrolls. It has to be
-   opaque and explicitly stacked, or the list scrolling past shows through it. */
-.sticky-head {
-  position: sticky;
-  top: calc(var(--head-h) + 10px);
-  z-index: 30;
-  background: var(--surface);
-  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, .9);
-}
+/* .sticky-head lives at the very end of this file — it has to beat .slab's
+   `position: relative`, and a same-specificity rule only wins by coming later. */
 
 .stack   { display: flex; flex-direction: column; }
 .row     { display: flex; align-items: center; }
@@ -231,7 +231,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(10, 10, 11, .72);
+  background: rgba(8, 8, 13, .72);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border-bottom: 1px solid var(--line);
@@ -280,7 +280,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
     transition: color .18s var(--ease), background .18s var(--ease);
   }
   .tabs-desktop a:hover { color: var(--text); background: var(--surface-2); }
-  .tabs-desktop a.active { color: var(--text); background: var(--surface-3); }
+  .tabs-desktop a.active {
+    color: var(--accent-ink);
+    background: var(--accent);
+    box-shadow: var(--accent-glow);
+  }
 }
 
 .tabbar {
@@ -290,7 +294,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  background: rgba(10, 10, 11, .86);
+  background: rgba(8, 8, 13, .86);
   backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
   border-top: 1px solid var(--line);
@@ -314,7 +318,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   transition: color .18s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.tabbar a.active { color: var(--text); }
+.tabbar a.active { color: var(--accent-2); }
 .tabbar svg { width: 20px; height: 20px; }
 .tabbar .dot {
   position: absolute;
@@ -334,7 +338,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-radius: var(--radius);
   transition: border-color .2s var(--ease), background .2s var(--ease);
 }
-a.card:hover { border-color: var(--line-bright); background: var(--surface-2); }
+a.card:hover { border-color: var(--accent-edge); background: var(--surface-2); }
 
 .card-pad { padding: 18px; }
 @media (min-width: 640px) { .card-pad { padding: 22px; } }
@@ -358,7 +362,7 @@ a.card:hover { border-color: var(--line-bright); background: var(--surface-2); }
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--line-bright) 22%, var(--line-bright) 78%, transparent);
 }
-.slab.green { border-color: var(--line-2); }
+.slab.green { border-color: var(--accent-edge); box-shadow: 0 0 60px -30px rgba(124,92,255,.8); }
 .slab.green::before { background: linear-gradient(90deg, transparent, var(--accent-edge) 50%, transparent); }
 
 /* Kairos-style hairline field: a faint rule with a crosshair at the corners.
@@ -416,7 +420,9 @@ a.card:hover { border-color: var(--line-bright); background: var(--surface-2); }
               background .18s var(--ease), border-color .18s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.btn:hover:not(:disabled)  { filter: brightness(1.08); transform: translateY(-1px); }
+.btn { box-shadow: var(--accent-glow); }
+.btn.ghost, .btn.quiet { box-shadow: none; }
+.btn:hover:not(:disabled)  { filter: brightness(1.1); transform: translateY(-1px); }
 .btn:active:not(:disabled) { transform: translateY(0); filter: brightness(.96); }
 .btn:disabled { opacity: .35; cursor: not-allowed; }
 
@@ -664,6 +670,7 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: 700;
+  box-shadow: var(--accent-glow);
 }
 
 /* ---------------------------------------------------------- notices ------ */
@@ -680,7 +687,7 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
   line-height: 1.5;
 }
 .notice.error { border-color: var(--live-edge); background: var(--live-wash); color: #FFB5A6; }
-.notice.good  { border-color: var(--accent-edge); background: var(--accent-wash); color: #DFFF9E; }
+.notice.good  { border-color: rgba(74,222,128,.35); background: var(--up-wash); color: #B6F5CC; }
 .notice.warn  { border-color: rgba(232, 196, 104, .3); background: var(--gold-wash); color: #F0DCA8; }
 
 /* ------------------------------------------------------------- sheet ----- */
@@ -791,15 +798,19 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
   animation: rise .26s var(--ease);
 }
 .toast.error { background: #2A1512; border-color: var(--live-edge); color: #FFB5A6; }
-.toast.good  { background: #1B2410; border-color: var(--accent-edge); color: #DFFF9E; }
+.toast.good  { background: #16241A; border-color: rgba(74,222,128,.4); color: #B6F5CC; }
 
 /* A single quiet entrance for the page, rather than a per-block stagger.
    Staggering direct children meant animating sticky elements too, which broke
    their stacking and let scrolling content paint straight through them. */
+/* Opacity only — no transform. `.page` wraps everything including modals, and
+   even an identity transform makes an element the containing block for its
+   fixed-position descendants, which pins a full-screen overlay to the page box
+   instead of the viewport. */
 @media (prefers-reduced-motion: no-preference) {
   .page { animation: enter .4s var(--ease) both; }
 }
-@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes enter { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -807,4 +818,26 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+
+/* ------------------------------------------------------------ sticking ---
+   Declared last on purpose. `.slab` sets position: relative, and an equally
+   specific rule only wins by being later in the file — when this sat higher
+   up, the clock kept `relative` while still taking the `top` offset, which
+   shoved it 90-odd pixels down over the columns beneath it.
+   -------------------------------------------------------------------------- */
+
+.sticky-head {
+  position: sticky;
+  top: calc(var(--head-h) + 10px);
+  z-index: 30;
+  background: var(--surface);
+  box-shadow: 0 14px 30px -16px rgba(0, 0, 0, .95);
+}
+
+/* On desktop each pane scrolls inside itself, so the page barely moves and
+   there is nothing for the clock to stick to — pinning it there only let it
+   cover the column beside it. */
+@media (min-width: 940px) {
+  .sticky-head { position: static; top: auto; box-shadow: none; }
 }
