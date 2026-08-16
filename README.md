@@ -1,5 +1,7 @@
 # The Draft
 
+**Live: https://fantasy-draft-bay.vercel.app**
+
 A private Fantasy Premier League game for two to six friends: a live snake draft,
 one owner per real player, fixed 16-man squads, and official FPL points all season.
 
