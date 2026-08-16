@@ -29,7 +29,7 @@ export const useLeague = () => {
 
 export default function LeagueLayout () {
   const { leagueId = '' } = useParams()
-  const { userId } = useAuth()
+  const { userId, name, signOut } = useAuth()
   const { fail } = useToast()
   const navigate = useNavigate()
 
@@ -133,11 +133,24 @@ export default function LeagueLayout () {
     <Ctx.Provider value={value}>
       <header className="masthead">
         <div className="masthead-inner">
-          <div className="grow" style={{ minWidth: 0 }}>
+          {/* The wordmark is inline-flex, so this has to be a column or it
+              lands on the same line as the back link. */}
+          <div className="grow stack" style={{ minWidth: 0, alignItems: 'flex-start' }}>
             <NavLink to="/" className="eyebrow">← All leagues</NavLink>
-            <div className="wordmark truncate" style={{ marginTop: 2 }}>{league.name}</div>
+            <div className="wordmark truncate" style={{ marginTop: 2, maxWidth: '100%' }}>
+              {league.name}
+            </div>
           </div>
-          <LeagueBadge status={league.status} />
+          <div className="stack gap-4" style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+            <LeagueBadge status={league.status} />
+            {/* Which account you're on decides whether you see commissioner
+                controls, so it shouldn't be a mystery. */}
+            <button className="btn quiet tiny" style={{ minHeight: 0, padding: 0 }}
+              title={`Signed in as ${name}`}
+              onClick={() => { if (confirm(`Sign out of ${name}?`)) void signOut() }}>
+              {name} · sign out
+            </button>
+          </div>
         </div>
 
         <nav className="tabs-desktop">

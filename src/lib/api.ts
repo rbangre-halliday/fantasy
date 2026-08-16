@@ -19,16 +19,12 @@ const rpc = (fn: string, args?: Record<string, unknown>) =>
 export const getGameweeks = () =>
   ok<Gameweek[]>(supabase.from('gameweeks').select('*').order('id'))
 
-export const getMyLeagues = async (): Promise<League[]> => {
-  const { data, error } = await supabase
-    .from('league_members').select('leagues(*)').order('joined_at')
-  if (error) throw new Error(error.message)
-  // PostgREST types an embedded row as an array; at runtime a to-one embed is
-  // a single object.
-  return (data ?? [])
-    .map(r => r.leagues as unknown as League)
-    .filter(Boolean)
-}
+// Selecting leagues directly is already scoped to the ones you belong to by the
+// leagues_read RLS policy. Going via league_members instead would return one
+// row per *manager* in each league - the same league repeated - because that
+// table's policy exposes every membership row in a league you're part of.
+export const getMyLeagues = () =>
+  ok<League[]>(supabase.from('leagues').select('*').order('created_at'))
 
 export const getLeague = (id: string) =>
   ok<League>(supabase.from('leagues').select('*').eq('id', id).single())
