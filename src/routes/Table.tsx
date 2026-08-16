@@ -67,8 +67,12 @@ export default function Table () {
             <ul>
               {ranked.map(r => (
                 <li key={r.member_id}>
+                  {/* Your own row is the first thing anyone looks for in a
+                      table, and "· you" in 12px grey is not findable at a
+                      glance. Marking the row means you never have to read
+                      the names to locate yourself. */}
                   <Link
-                    className="list-row"
+                    className={`list-row${r.member_id === me.id ? ' is-you' : ''}`}
                     to={r.member_id === me.id
                       ? `/l/${league.id}/team`
                       : `/l/${league.id}/team/${r.member_id}`}>

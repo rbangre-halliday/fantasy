@@ -152,7 +152,13 @@
 /* --------------------------------------------------------------- reset --- */
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+
+/* #root takes min-height, not height. A sticky element can only stick inside
+   its containing block, so pinning #root to exactly 100% of the viewport meant
+   the masthead scrolled away for good the moment the page passed one screen —
+   which is every screen in this app. */
+html, body { height: 100%; }
+#root { min-height: 100%; }
 
 body {
   margin: 0;
@@ -311,7 +317,10 @@ a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
 }
 @media (min-width: 880px) {
   .page { padding-bottom: var(--s-8); }
-  :root { --head-h: 101px; }
+  /* Measured, not estimated, and deliberately a pixel short of the real 87px:
+     anything that sticks below the masthead should tuck under its rule rather
+     than leave a hairline gap for rows to scroll through. */
+  :root { --head-h: 86px; }
 }
 
 .page.narrow { max-width: 820px; }
@@ -697,6 +706,34 @@ a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(-
 }
 .input::placeholder { color: var(--fg-3); }
 
+/* Search, with its keyboard shortcut printed on it. The key hides on touch —
+   there is no key to press — and while you are typing, where it would be
+   noise sitting next to your own text. */
+.search { position: relative; display: flex; }
+.search .input { padding-right: 42px; }
+.search kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
+  background: var(--stock-2);
+  color: var(--fg-3);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.search .input:focus ~ kbd,
+.search .input:not(:placeholder-shown) ~ kbd { opacity: 0; }
+@media (hover: none) { .search kbd { display: none; } }
+
 .input.code {
   font-stretch: 80%;
   font-size: 30px;
@@ -803,6 +840,17 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--stock
 }
 .list-row.is-selected .name { color: var(--fg); }
 
+/* The most recent thing to happen, and the row that is you. Both are the
+   Von Restorff case: in a column of near-identical rows, the one that differs
+   is the one the eye finds without being told where to look. Kept to a
+   hairline and a shade so the list still reads as a list. */
+.list-row.is-latest,
+.list-row.is-you {
+  background: var(--stock-2);
+  box-shadow: inset 1px 0 0 var(--uv-lift);
+}
+a.list-row.is-you:hover { background: var(--stock-3); }
+
 .name { font-weight: 600; font-size: 14.5px; letter-spacing: -.012em; }
 
 .pick-row { display: flex; align-items: stretch; }
@@ -856,10 +904,17 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--stock
 .star:hover { color: var(--fg-2); }
 .star.on { color: var(--gold); }
 
+/* Column headings stick under the masthead. Scroll forty rows down a table
+   and the labels are gone; every number after that is a number you have to
+   count columns to name. */
 .thead {
+  position: sticky;
+  top: var(--head-h);
+  z-index: 5;
+  background: var(--stock-0);
   display: flex;
   gap: var(--s-3);
-  padding: 0 12px 8px;
+  padding: 10px 12px 8px;
   margin: 0 -12px;
   border-bottom: 1px solid var(--rule-2);
   font-stretch: 88%;
@@ -912,6 +967,55 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--stock
 .seg button[aria-pressed='true'] {
   background: var(--uv-pale);
   color: var(--uv-ink);
+}
+
+/* ------------------------------------------------------- draft needs ----
+
+   The squad shape you still have to fill, shown inside the clock block while
+   the pick is yours. Sixteen slots across four capped positions is more than
+   working memory holds under a two-minute clock, so the interface holds it. */
+
+.needs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--s-4);
+}
+
+.need {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 5px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: var(--r-sm);
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.need-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, .16);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.need-note {
+  margin-right: 2px;
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #D79AAB;               /* tinted from the crimson block it sits on */
 }
 
 /* --------------------------------------------------------- trades ------- */

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import type { Position } from '../lib/types'
@@ -68,14 +68,49 @@ export function Sheet ({
   children: ReactNode
   footer?: ReactNode
 }) {
+  const panel = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+
+    // Move focus into the dialog and keep it there. Without this, the page
+    // behind stays keyboard-reachable through a modal that is meant to have
+    // taken over — you tab straight out of the sheet and into rows you can no
+    // longer see, and a screen reader never learns the dialog opened. Focus
+    // goes back where it came from on close so the keyboard doesn't lose its
+    // place.
+    const returnTo = document.activeElement as HTMLElement | null
+    const FOCUSABLE =
+      'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])'
+    const inPanel = () => Array.from(
+      panel.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []
+    ).filter(el => el.offsetParent !== null)
+
+    // An autoFocus field inside the sheet has already claimed focus; don't
+    // yank it back to the container and undo that.
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus()
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab') return
+      const items = inPanel()
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || active === panel.current)) {
+        e.preventDefault(); last.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault(); first.focus()
+      }
+    }
+
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = prev
       window.removeEventListener('keydown', onKey)
+      returnTo?.focus?.()
     }
   }, [onClose])
 
@@ -85,7 +120,8 @@ export function Sheet ({
   // its parent and scrolled off screen.
   return createPortal(
     <div className="scrim" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}
+        ref={panel} tabIndex={-1}>
         <div className="sheet-head">
           <h2 className="h3">{title}</h2>
           <button className="btn quiet" onClick={onClose} aria-label="Close">Close</button>
@@ -95,6 +131,49 @@ export function Sheet ({
       </div>
     </div>,
     document.body
+  )
+}
+
+/**
+ * The search box over a player list.
+ *
+ * Every list in this app is 600 names long and the fastest way through one is
+ * to type. `/` puts the cursor in the box from anywhere on the page and Escape
+ * clears it — which matters most in the draft room, where the alternative is
+ * finding a target with a mouse while a two-minute clock runs. The key is
+ * printed on the field, because a shortcut nobody can see is a shortcut nobody
+ * uses; it hides on touch, where there is no key to press.
+ */
+export function SearchField ({ value, onChange, placeholder }: {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+}) {
+  const input = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement
+      const typing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        input.current?.focus()
+        input.current?.select()
+      } else if (e.key === 'Escape' && el === input.current) {
+        onChange('')
+        input.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onChange])
+
+  return (
+    <div className="search">
+      <input ref={input} className="input" type="search" value={value}
+        placeholder={placeholder} onChange={e => onChange(e.target.value)} />
+      <kbd aria-hidden="true">/</kbd>
+    </div>
   )
 }
 

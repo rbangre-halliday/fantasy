@@ -3,7 +3,7 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconStar, Loading, Notice, PosChip, Segmented, Sheet } from '../components/ui'
+import { Eyebrow, IconStar, Loading, Notice, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
 import { useShortlist } from '../lib/shortlist'
 import { clock } from '../lib/format'
@@ -69,6 +69,17 @@ export default function DraftRoom () {
     return () => clearInterval(id)
   }, [])
 
+  // Nobody watches a draft in a focused tab for two hours. Missing your pick
+  // costs you the player — the server auto-picks — so the turn has to be able
+  // to reach you when the page isn't the thing you're looking at. The tab
+  // title is the one channel that needs no permission and makes no noise.
+  useEffect(() => {
+    const mine = draft?.status === 'running' && draft.current_member_id === me.id
+    const base = 'The Draft — Fantasy Premier League'
+    document.title = mine ? '⏱ Your pick — The Draft' : base
+    return () => { document.title = base }
+  }, [draft?.status, draft?.current_member_id, me.id])
+
   const deadline = draft?.pick_deadline ? new Date(draft.pick_deadline).getTime() : null
   const remaining = deadline === null ? null : deadline - (now + offset)
   const running = draft?.status === 'running'
@@ -94,6 +105,38 @@ export default function DraftRoom () {
   }, [players, me.id])
 
   const myTotal = POSITIONS.reduce((n, p) => n + myCounts[p], 0)
+
+  /**
+   * How many picks until it's your turn again.
+   *
+   * A snake draft makes this genuinely hard to work out in your head — the
+   * order reverses every round, so "when am I up?" changes with the round's
+   * parity. Sitting there not knowing whether you have ten seconds or ten
+   * minutes is the worst part of a draft, and the answer is a pure function of
+   * numbers the client already has. Mirrors snake_member() in
+   * supabase/03_functions.sql: slot = idx on odd rounds, n + 1 - idx on even.
+   */
+  const picksUntilMine = useMemo(() => {
+    const n = members.length
+    if (!draft || !n || me.draft_position == null) return null
+    const slotAt = (pick: number) => {
+      const round = Math.floor((pick - 1) / n) + 1
+      const idx = ((pick - 1) % n) + 1
+      return round % 2 === 1 ? idx : n + 1 - idx
+    }
+    const last = n * draft.total_rounds
+    for (let p = draft.current_pick; p <= last; p++) {
+      if (slotAt(p) === me.draft_position) return p - draft.current_pick
+    }
+    return null                                  // no picks left this draft
+  }, [draft, members.length, me.draft_position])
+
+  /** The positions you still have room for, so the board can be narrowed. */
+  const stillNeeded = useMemo(
+    () => POSITIONS
+      .map(p => ({ pos: p, left: SQUAD_CAPS[p] - myCounts[p] }))
+      .filter(x => x.left > 0),
+    [myCounts])
 
   const mySquad = useMemo(
     () => (players ?? [])
@@ -174,8 +217,32 @@ export default function DraftRoom () {
               </h1>
               <div className="small muted mt-8">
                 Round {draft.current_round} · pick {draft.current_pick} of {totalPicks}
-                {draft.status === 'paused' && ' · paused by the commissioner'}
+                {draft.status === 'paused'
+                  ? ' · paused by the commissioner'
+                  // Guarded above zero on purpose: the countdown is derived
+                  // from the snake order while `myTurn` comes off the draft
+                  // row, and if those two ever disagree the honest thing is to
+                  // say nothing rather than to announce "up in 0 picks".
+                  : !myTurn && picksUntilMine !== null && picksUntilMine > 0 && (
+                      picksUntilMine === 1 ? ' · you’re next'
+                        : ` · you’re up in ${picksUntilMine} picks`
+                    )}
               </div>
+
+              {/* The one moment attention is guaranteed to be here is the
+                  moment the clock is yours — so this is where "what do I
+                  still need?" belongs, rather than in a counter further down
+                  the page that you'd have to go looking for. */}
+              {myTurn && stillNeeded.length > 0 && (
+                <div className="needs">
+                  <span className="need-note">Still to fill</span>
+                  {stillNeeded.map(({ pos, left }) => (
+                    <span key={pos} className="need">
+                      <span className="need-n num">{left}</span> {pos}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ textAlign: 'right' }}>
@@ -229,8 +296,8 @@ export default function DraftRoom () {
             <Eyebrow>Available</Eyebrow>
 
             <div className="stack gap-12">
-              <input className="input" value={query} onChange={e => setQuery(e.target.value)}
-                placeholder="Search player or club" type="search" />
+              <SearchField value={query} onChange={setQuery}
+                placeholder="Search player or club" />
               <Segmented<Filter>
                 value={filter} onChange={setFilter}
                 options={[
@@ -319,10 +386,14 @@ export default function DraftRoom () {
               <div className="empty">No picks yet.</div>
             ) : (
               <ul className="list scroll-pane" style={{ maxHeight: 360 }}>
-                {[...picks].reverse().slice(0, 40).map(pk => {
+                {[...picks].reverse().slice(0, 40).map((pk, i) => {
                   const player = players?.find(p => p.id === pk.player_id)
                   return (
-                    <li key={pk.id} className="list-row">
+                    // The newest pick stays marked until it is superseded.
+                    // Picks arrive over the wire while you are reading the
+                    // board, and a row that silently appears at the top of a
+                    // list of forty identical rows is a change nobody sees.
+                    <li key={pk.id} className={`list-row${i === 0 ? ' is-latest' : ''}`}>
                       <span className="num tiny muted" style={{ width: 34 }}>
                         {pk.round}.{String(((pk.pick_number - 1) % members.length) + 1)}
                       </span>

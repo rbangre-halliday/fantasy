@@ -52,7 +52,9 @@ export default function SignIn () {
   }
 
   return (
-    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+    // 100dvh rather than 100%: #root is min-height now, so a percentage here
+    // has no definite parent height to resolve against.
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
       {/* --- rail ---------------------------------------------------------- */}
       <header style={{

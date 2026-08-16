@@ -3,7 +3,7 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, Segmented, Sheet } from '../components/ui'
+import { Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position } from '../lib/types'
 
@@ -87,8 +87,8 @@ export default function Players () {
       )}
 
       <div className="stack gap-12">
-        <input className="input" value={query} onChange={e => setQuery(e.target.value)}
-          placeholder="Search player or club" type="search" />
+        <SearchField value={query} onChange={setQuery}
+          placeholder="Search player or club" />
         <div className="row gap-8 wrap">
           <Segmented<Scope> value={scope} onChange={setScope}
             options={[{ value: 'free', label: 'Free agents' }, { value: 'all', label: 'Everyone' }]} />
