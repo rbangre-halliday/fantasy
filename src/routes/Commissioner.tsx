@@ -50,7 +50,7 @@ export default function Commissioner () {
   }
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <div className="mt-32">
         <div className="eyebrow">For fixing mistakes between friends</div>
         <h1 className="h1 mt-8">Commissioner</h1>

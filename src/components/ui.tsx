@@ -110,6 +110,14 @@ export const IconTrade = () => (
 export const IconTable = () => (
   <svg viewBox="0 0 24 24" {...stroke}><path d="M4 6h16M4 12h16M4 18h16M9 4v16" /></svg>
 )
+export const IconStar = ({ filled }: { filled?: boolean }) => (
+  <svg viewBox="0 0 24 24" width="15" height="15"
+    fill={filled ? 'currentColor' : 'none'}
+    stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+    <path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 16.9l-5.2 2.7 1-5.75-4.2-4.1 5.8-.85z" />
+  </svg>
+)
+
 export const IconLock = () => (
   <svg viewBox="0 0 24 24" width="11" height="11" {...stroke}><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>
 )

@@ -45,8 +45,12 @@ export default function Table () {
 
   const tied = ranked.some((r, i) => i > 0 && r.rank === ranked[i - 1].rank)
 
+  // Draft picks already have a whole screen of their own, and 96 of them would
+  // bury every real move. This feed is for what happens after the draft.
+  const activity = useMemo(() => txns.filter(t => t.type !== 'draft'), [txns])
+
   return (
-    <div className="page">
+    <div className="page narrow">
       <div className="mt-32">
         <div className="eyebrow">
           Scoring from GW {league.scoring_start_gw} · Official FPL points
@@ -114,9 +118,11 @@ export default function Table () {
 
       <div className="mt-40">
         <Eyebrow>League activity</Eyebrow>
-        {txns.length === 0 ? <div className="empty">Nothing yet.</div> : (
+        {activity.length === 0 ? (
+          <div className="empty">No moves yet. Signings and trades show up here.</div>
+        ) : (
           <ul className="list">
-            {txns.map(t => (
+            {activity.map(t => (
               <li key={t.id} className="list-row">
                 <span className="grow" style={{ minWidth: 0 }}>
                   <span className="small truncate" style={{ display: 'block' }}>

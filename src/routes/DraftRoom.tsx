@@ -3,12 +3,14 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Loading, Notice, PosChip, Segmented, Sheet } from '../components/ui'
+import { Eyebrow, IconStar, Loading, Notice, PosChip, Segmented, Sheet } from '../components/ui'
+import SquadPitch from '../components/SquadPitch'
+import { useShortlist } from '../lib/shortlist'
 import { clock } from '../lib/format'
 import { POSITIONS, SQUAD_CAPS } from '../lib/types'
 import type { DraftPick, LeaguePlayer, Position } from '../lib/types'
 
-type Filter = 'ALL' | Position
+type Filter = 'ALL' | 'SHORT' | Position
 
 export default function DraftRoom () {
   const { league, members, me, draft, isCommissioner, refresh } = useLeague()
@@ -23,6 +25,7 @@ export default function DraftRoom () {
   const [offset, setOffset] = useState(0)
   const [now, setNow] = useState(() => Date.now())
   const tickGuard = useRef(0)
+  const shortlist = useShortlist(league.id)
 
   const nameOf = useMemo(
     () => new Map(members.map(m => [m.id, m.team_name])),
@@ -92,18 +95,37 @@ export default function DraftRoom () {
 
   const myTotal = POSITIONS.reduce((n, p) => n + myCounts[p], 0)
 
+  const mySquad = useMemo(
+    () => (players ?? [])
+      .filter(p => p.owner_member_id === me.id)
+      .map(p => ({ id: p.id, name: p.web_name, club: p.club_short, position: p.position })),
+    [players, me.id])
+
   const visible = useMemo(() => {
     if (!players) return []
     const q = query.trim().toLowerCase()
-    return players.filter(p =>
+    const rows = players.filter(p =>
       !p.owner_member_id &&
-      (filter === 'ALL' || p.position === filter) &&
+      (filter === 'ALL' || filter === 'SHORT' || p.position === filter) &&
+      (filter !== 'SHORT' || shortlist.set.has(p.id)) &&
       (!q ||
         p.web_name.toLowerCase().includes(q) ||
         `${p.first_name ?? ''} ${p.second_name ?? ''}`.toLowerCase().includes(q) ||
         (p.club ?? '').toLowerCase().includes(q))
-    ).slice(0, 180)
-  }, [players, filter, query])
+    )
+    // Starred players float to the top everywhere else, so the board you built
+    // is the board you pick from when the clock is running.
+    if (filter !== 'SHORT') {
+      rows.sort((a, b) =>
+        Number(shortlist.set.has(b.id)) - Number(shortlist.set.has(a.id)))
+    }
+    return rows.slice(0, 180)
+  }, [players, filter, query, shortlist.set])
+
+  // How many of your starred players are still on the board.
+  const shortlistLeft = useMemo(
+    () => (players ?? []).filter(p => !p.owner_member_id && shortlist.set.has(p.id)).length,
+    [players, shortlist.set])
 
   async function pick (p: LeaguePlayer) {
     setBusy(true)
@@ -133,7 +155,7 @@ export default function DraftRoom () {
   return (
     <div className="page">
       {/* ---- the clock ------------------------------------------------- */}
-      <div className={`slab mt-24 ${myTurn ? 'red' : 'green'}`} style={{ position: 'sticky', top: 0 }}>
+      <div className={`slab sticky-head mt-24 ${myTurn ? 'red' : 'green'}`}>
         {complete ? (
           <>
             <div className="eyebrow">Draft complete</div>
@@ -188,25 +210,6 @@ export default function DraftRoom () {
         )}
       </div>
 
-      {/* ---- my squad so far ------------------------------------------- */}
-      <div className="mt-24">
-        <Eyebrow>Your squad · {myTotal} of 16</Eyebrow>
-        <div className="row gap-8 wrap">
-          {POSITIONS.map(p => {
-            const full = myCounts[p] >= SQUAD_CAPS[p]
-            return (
-              <div key={p} className="card" style={{
-                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
-                opacity: full ? .5 : 1
-              }}>
-                <PosChip pos={p} />
-                <span className="num small">{myCounts[p]}/{SQUAD_CAPS[p]}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
       <div className="mt-32" style={{
         display: 'grid', gap: 32,
         gridTemplateColumns: 'minmax(0, 1fr)'
@@ -214,8 +217,10 @@ export default function DraftRoom () {
         <div style={{ display: 'grid', gap: 32, gridTemplateColumns: 'minmax(0,1fr)' }}
           className="draft-grid">
 
-          {/* ---- available players ------------------------------------- */}
-          <section>
+          {/* ---- available players -------------------------------------
+              Once every squad is full there is nothing to pick, so the board
+              of 500+ names is just noise. It disappears. */}
+          <section hidden={complete}>
             <Eyebrow>Available</Eyebrow>
 
             <div className="stack gap-12">
@@ -225,6 +230,7 @@ export default function DraftRoom () {
                 value={filter} onChange={setFilter}
                 options={[
                   { value: 'ALL', label: 'All' },
+                  { value: 'SHORT', label: `★ ${shortlistLeft}` },
                   ...POSITIONS.map(p => ({
                     value: p as Filter,
                     label: myCounts[p] >= SQUAD_CAPS[p] ? `${p} · full` : p
@@ -235,16 +241,26 @@ export default function DraftRoom () {
 
             {players === null ? <Loading /> : (
               <>
-                <div className="thead mt-16">
+                <div className="thead mt-16" style={{ paddingLeft: 34 }}>
                   <span className="grow">Player</span>
                   <span style={{ width: 46, textAlign: 'right' }}>Last</span>
                   <span style={{ width: 46, textAlign: 'right' }}>This</span>
                 </div>
-                <ul>
+                {/* The board scrolls inside itself rather than making the page
+                    thousands of pixels tall. */}
+                <ul className="scroll-pane">
                   {visible.map(p => {
                     const capped = myCounts[p.position] >= SQUAD_CAPS[p.position]
+                    const starred = shortlist.set.has(p.id)
                     return (
-                      <li key={p.id}>
+                      <li key={p.id} className="pick-row">
+                        <button
+                          className={`star ${starred ? 'on' : ''}`}
+                          aria-pressed={starred}
+                          aria-label={starred ? `Remove ${p.web_name} from shortlist` : `Shortlist ${p.web_name}`}
+                          onClick={() => shortlist.toggle(p.id)}>
+                          <IconStar filled={starred} />
+                        </button>
                         <button className={`list-row ${capped ? 'is-disabled' : ''}`}
                           disabled={!myTurn || capped || busy}
                           onClick={() => setConfirming(p)}>
@@ -264,6 +280,11 @@ export default function DraftRoom () {
                     )
                   })}
                 </ul>
+                {filter === 'SHORT' && visible.length === 0 && (
+                  <div className="empty">
+                    Nothing starred yet. Tap the ★ beside a player to build your board.
+                  </div>
+                )}
                 {visible.length === 0 && <div className="empty">No players match that.</div>}
                 {visible.length === 180 && (
                   <p className="tiny muted mt-8" style={{ textAlign: 'center' }}>
@@ -274,8 +295,20 @@ export default function DraftRoom () {
             )}
           </section>
 
-          {/* ---- the board --------------------------------------------- */}
+          {/* ---- your squad, as a shape -------------------------------- */}
           <section>
+            <Eyebrow>Your squad · {myTotal} of 16</Eyebrow>
+            <SquadPitch players={mySquad} />
+            <div className="row gap-6 wrap mt-12" style={{ marginTop: 12 }}>
+              {POSITIONS.map(p => (
+                <span key={p} className="tiny muted num"
+                  style={{ opacity: myCounts[p] >= SQUAD_CAPS[p] ? .4 : 1 }}>
+                  {p} {myCounts[p]}/{SQUAD_CAPS[p]}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-32" />
             <Eyebrow>Picks</Eyebrow>
             {picks.length === 0 ? (
               <div className="empty">No picks yet.</div>

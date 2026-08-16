@@ -4,6 +4,7 @@ import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
 import { Eyebrow, IconLock, Loading, Notice, PosChip, Segmented } from '../components/ui'
+import SquadPitch from '../components/SquadPitch'
 import { POS_LABEL, availability, kickoffLabel, xiProblem } from '../lib/format'
 import { POSITIONS, XI_SHAPE } from '../lib/types'
 import type { Position, SquadPlayer } from '../lib/types'
@@ -160,45 +161,85 @@ export default function Squad () {
             </div>
           )}
 
-          <div className="mt-32">
-            <Eyebrow>Starting XI · 4-4-2</Eyebrow>
-            {POSITIONS.map(pos => (
-              <PositionBlock key={pos} pos={pos}
-                players={starters.filter(p => p.position === pos)}
-                expected={XI_SHAPE[pos]}
-                picked={picked} canSwapWith={canSwapWith} onTap={onTap}
-                interactive={isMine} gw={gw} />
-            ))}
-          </div>
+          <div className="mt-32 squad-grid">
+            {/* The XI as a shape. On desktop it stays put while the list
+                scrolls, so a swap always shows its effect on the formation. */}
+            <aside className="squad-pitch-col">
+              <Eyebrow>Formation · 4-4-2</Eyebrow>
+              <SquadPitch
+                capacity={XI_SHAPE}
+                players={starters.map(p => ({
+                  id: p.player_id, name: p.web_name, club: p.club_short, position: p.position
+                }))}
+              />
+              <div className="row between mt-12" style={{ marginTop: 12 }}>
+                <span className="tiny muted">Bench</span>
+                <span className="tiny muted num">{bench.length}</span>
+              </div>
+              <div className="row gap-6 wrap" style={{ marginTop: 6 }}>
+                {bench.map((p, i) => (
+                  <span key={p.player_id} className="bench-chip">
+                    <span className="num tiny muted">{i + 1}</span>{p.web_name}
+                  </span>
+                ))}
+              </div>
+            </aside>
 
-          <div className="mt-32">
-            <Eyebrow>Bench · in substitution order</Eyebrow>
-            <ul className="list">
-              {bench.map((p, i) => (
-                <PlayerRow key={p.player_id} p={p} gw={gw}
-                  lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
-                  selected={picked === p.player_id}
-                  highlight={canSwapWith(p)}
-                  interactive={isMine}
-                  onTap={() => onTap(p)}
-                  trailing={isMine && (
-                    <span className="row gap-4">
-                      <button className="btn quiet" aria-label="Move up" disabled={i === 0 || saving}
-                        onClick={e => { e.stopPropagation(); moveBench(p.player_id, -1) }}>↑</button>
-                      <button className="btn quiet" aria-label="Move down"
-                        disabled={i === bench.length - 1 || saving}
-                        onClick={e => { e.stopPropagation(); moveBench(p.player_id, 1) }}>↓</button>
-                    </span>
-                  )} />
+            <div className="squad-list-col">
+              <Eyebrow>Starting XI</Eyebrow>
+              {POSITIONS.map(pos => (
+                <PositionBlock key={pos} pos={pos}
+                  players={starters.filter(p => p.position === pos)}
+                  expected={XI_SHAPE[pos]}
+                  picked={picked} canSwapWith={canSwapWith} onTap={onTap}
+                  interactive={isMine} gw={gw} />
               ))}
-            </ul>
-            <p className="tiny muted mt-8">
-              If a starter doesn’t play, the first eligible substitute in this order
-              takes their place automatically.
-            </p>
+
+              <div className="mt-32">
+                <Eyebrow>Bench · in substitution order</Eyebrow>
+                <ul className="list">
+                  {bench.map((p, i) => (
+                    <PlayerRow key={p.player_id} p={p} gw={gw}
+                      lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
+                      selected={picked === p.player_id}
+                      highlight={canSwapWith(p)}
+                      interactive={isMine}
+                      onTap={() => onTap(p)}
+                      trailing={isMine && (
+                        <span className="row gap-4">
+                          <button className="btn quiet" aria-label="Move up" disabled={i === 0 || saving}
+                            onClick={e => { e.stopPropagation(); moveBench(p.player_id, -1) }}>↑</button>
+                          <button className="btn quiet" aria-label="Move down"
+                            disabled={i === bench.length - 1 || saving}
+                            onClick={e => { e.stopPropagation(); moveBench(p.player_id, 1) }}>↓</button>
+                        </span>
+                      )} />
+                  ))}
+                </ul>
+                <p className="tiny muted mt-8">
+                  If a starter doesn’t play, the first eligible substitute in this order
+                  takes their place automatically.
+                </p>
+              </div>
+            </div>
           </div>
         </>
       )}
+
+      <style>{`
+        .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
+        .squad-list-col { max-width: 640px; }
+        .bench-chip {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 5px 10px; border-radius: 99px;
+          border: 1px solid var(--line); background: var(--surface);
+          font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;
+        }
+        @media (min-width: 1000px) {
+          .squad-grid { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 44px; }
+          .squad-pitch-col { position: sticky; top: calc(var(--head-h) + 16px); align-self: start; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -47,7 +47,7 @@ export default function Trades () {
   const open = league.status === 'active'
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <div className="mt-32">
         <div className="eyebrow">No vetoes, no committee</div>
         <h1 className="h1 mt-8">Trades</h1>

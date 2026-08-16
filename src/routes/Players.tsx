@@ -75,7 +75,7 @@ export default function Players () {
   const open = league.status === 'active'
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <div className="mt-32">
         <div className="eyebrow">Free agency · first come, first served</div>
         <h1 className="h1 mt-8">Players</h1>

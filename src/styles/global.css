@@ -76,6 +76,9 @@
   --page:   1160px;
   --gut:    clamp(18px, 4vw, 40px);
   --tabbar: calc(62px + env(safe-area-inset-bottom));
+  /* Height of the sticky masthead, so anything else that sticks can sit below
+     it instead of sliding underneath. */
+  --head-h: calc(63px + env(safe-area-inset-top));
 
   --ease: cubic-bezier(.22, 1, .36, 1);
 
@@ -180,7 +183,35 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   margin: 0 auto;
   padding: 0 var(--gut) calc(var(--tabbar) + 40px);
 }
-@media (min-width: 880px) { .page { padding-bottom: 80px; } }
+@media (min-width: 880px) {
+  .page { padding-bottom: 80px; }
+  :root { --head-h: 106px; }
+}
+
+/* Lists of a few columns shouldn't stretch to 1440px — the eye loses the row
+   between the name on the left and the number on the right. */
+.page.narrow { max-width: 860px; }
+
+/* A long list that scrolls inside its own box, so the page stays a sane
+   height no matter how many rows there are. */
+.scroll-pane {
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+}
+@media (min-width: 940px) { .scroll-pane { max-height: calc(100vh - 300px); } }
+
+/* A block that pins below the masthead as the page scrolls. It has to be
+   opaque and explicitly stacked, or the list scrolling past shows through it. */
+.sticky-head {
+  position: sticky;
+  top: calc(var(--head-h) + 10px);
+  z-index: 30;
+  background: var(--surface);
+  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, .9);
+}
 
 .stack   { display: flex; flex-direction: column; }
 .row     { display: flex; align-items: center; }
@@ -562,6 +593,29 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
 
 .name { font-weight: 600; font-size: 14.5px; letter-spacing: -.014em; }
 
+/* A row with its own star control sitting outside the main hit target, so
+   shortlisting never risks firing a pick. */
+.pick-row { display: flex; align-items: stretch; }
+.pick-row .list-row { margin-right: -12px; }
+
+.star {
+  flex: none;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  margin-left: -12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--line-bright);
+  cursor: pointer;
+  transition: color .16s var(--ease), transform .16s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.star:hover { color: var(--text-2); }
+.star.on { color: var(--gold); }
+.star.on:active { transform: scale(.85); }
+
 .thead {
   display: flex;
   gap: 13px;
@@ -739,16 +793,13 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
 .toast.error { background: #2A1512; border-color: var(--live-edge); color: #FFB5A6; }
 .toast.good  { background: #1B2410; border-color: var(--accent-edge); color: #DFFF9E; }
 
-/* Staggered entrance for the first few blocks on a screen. Cheap, and it
-   makes every page arrive rather than blink. */
+/* A single quiet entrance for the page, rather than a per-block stagger.
+   Staggering direct children meant animating sticky elements too, which broke
+   their stacking and let scrolling content paint straight through them. */
 @media (prefers-reduced-motion: no-preference) {
-  .page > * { animation: enter .45s var(--ease) both; }
-  .page > *:nth-child(1) { animation-delay: .02s; }
-  .page > *:nth-child(2) { animation-delay: .07s; }
-  .page > *:nth-child(3) { animation-delay: .12s; }
-  .page > *:nth-child(4) { animation-delay: .16s; }
+  .page { animation: enter .4s var(--ease) both; }
 }
-@keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

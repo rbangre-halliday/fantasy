@@ -40,7 +40,7 @@ export default function Lobby () {
   const full = members.length >= league.max_managers
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <div className="mt-32">
         <div className="eyebrow">Lobby</div>
         <h1 className="h1 mt-8">{league.name}</h1>
