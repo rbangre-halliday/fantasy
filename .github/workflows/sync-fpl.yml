@@ -1,0 +1,53 @@
+name: Sync FPL data
+
+on:
+  schedule:
+    # Every 20 minutes — fast enough that live gameweek points and kickoff
+    # locks stay fresh, cheap enough to sit inside the free Actions tier.
+    - cron: '*/20 * * * *'
+    # Once a week, also backfill previous-season totals for new arrivals.
+    - cron: '17 4 * * 2'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'normal | full | history'
+        default: 'normal'
+        type: choice
+        options: [normal, full, history]
+
+concurrency:
+  group: sync-fpl
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Choose flags
+        id: flags
+        run: |
+          if [ "${{ github.event.schedule }}" = "17 4 * * 2" ]; then
+            echo "args=--full --history" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.mode }}" = "full" ]; then
+            echo "args=--full" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.mode }}" = "history" ]; then
+            echo "args=--full --history" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/sync-fpl.mjs ${{ steps.flags.outputs.args }}
