@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Loading, Notice, PosChip, Sheet } from '../components/ui'
+import { Eyebrow, Loading, Notice, PageHead, PosChip, Sheet } from '../components/ui'
 import { relativeTime } from '../lib/format'
 import type { LeaguePlayer, Trade } from '../lib/types'
 
@@ -51,13 +51,12 @@ export default function Commissioner () {
 
   return (
     <div className="page narrow">
-      <div className="mt-32">
-        <div className="eyebrow">For fixing mistakes between friends</div>
-        <h1 className="h1 mt-8">Commissioner</h1>
-      </div>
+      <PageHead
+        title="Commissioner"
+        meta="Repair tools, not gameplay. Everything here exists because friends make mistakes." />
 
       {draft && draft.status !== 'complete' && (
-        <div className="mt-24">
+        <div>
           <Eyebrow>Draft controls</Eyebrow>
           <div className="row gap-8 wrap">
             {draft.status === 'running' ? (

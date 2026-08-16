@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Notice, Sheet } from '../components/ui'
+import { Eyebrow, Notice, PageHead, Sheet } from '../components/ui'
 
 export default function Lobby () {
   const { league, members, me, isCommissioner, refresh } = useLeague()
@@ -41,22 +41,21 @@ export default function Lobby () {
 
   return (
     <div className="page narrow">
-      <div className="mt-32">
-        <div className="eyebrow">Lobby</div>
-        <h1 className="h1 mt-8">{league.name}</h1>
-      </div>
+      <PageHead
+        title={league.name}
+        meta="Waiting room. Nobody can join once the draft starts." />
 
       {/* Invite code, given the space it deserves — it's the only thing that
           matters on this screen until everyone has arrived. */}
-      <div className="slab green mt-24">
+      <div className="slab green">
         <div className="eyebrow">Invite code</div>
-        <div className="num" style={{
-          fontSize: 'clamp(38px, 11vw, 58px)', letterSpacing: '.14em',
-          color: 'var(--text)', lineHeight: 1.1, marginTop: 8
+        <div className="figure" style={{
+          fontSize: 'clamp(46px, 13vw, 74px)', letterSpacing: '.1em',
+          color: 'var(--fg)', marginTop: 10
         }}>
           {league.invite_code}
         </div>
-        <div className="row gap-8 wrap mt-16">
+        <div className="row gap-8 wrap mt-24">
           <button className="btn" onClick={() => void share()}>Share invite</button>
           <button className="btn ghost" onClick={() => {
             void navigator.clipboard.writeText(inviteUrl)
@@ -87,7 +86,7 @@ export default function Lobby () {
             </li>
           ))}
           {Array.from({ length: league.max_managers - members.length }, (_, i) => (
-            <li key={`empty-${i}`} className="list-row" style={{ opacity: .45 }}>
+            <li key={`empty-${i}`} className="list-row">
               <div className="muted small">Empty seat</div>
             </li>
           ))}

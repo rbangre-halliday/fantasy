@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
-import { Notice } from '../components/ui'
+import { Notice, PageHead } from '../components/ui'
 
 export default function NewLeague () {
   const navigate = useNavigate()
@@ -26,19 +26,18 @@ export default function NewLeague () {
     <>
       <header className="masthead">
         <div className="masthead-inner">
-          <Link to="/" className="eyebrow">← All leagues</Link>
+          <Link to="/" className="btn quiet">← All leagues</Link>
           <div className="wordmark">The&nbsp;<i>Draft</i></div>
         </div>
       </header>
 
       <div className="page">
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
-          <div className="mt-40">
-            <div className="eyebrow">Step one of one</div>
-            <h1 className="h1 mt-8">Start a league</h1>
-          </div>
+          <PageHead
+            title="Start a league"
+            meta="One step. You’ll be the commissioner, and you decide when the draft starts." />
 
-          <form onSubmit={submit} className="slab green mt-24 stack gap-16">
+          <form onSubmit={submit} className="slab stack gap-16">
             <label className="field">
               <span className="label">League name</span>
               <input className="input" required minLength={2} maxLength={40}
@@ -54,8 +53,7 @@ export default function NewLeague () {
             </label>
 
             <Notice>
-              You’ll be the commissioner. Up to five friends can join with your invite
-              code, and you decide when the draft starts.
+              Up to five friends can join with the invite code you get next.
             </Notice>
 
             <button className="btn lg block" disabled={busy}>

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconLock, Loading, Notice, PosChip, Segmented } from '../components/ui'
+import { Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, PosChip, Segmented } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
 import { POS_LABEL, availability, kickoffLabel, xiProblem } from '../lib/format'
 import { POSITIONS, XI_SHAPE } from '../lib/types'
@@ -116,20 +116,19 @@ export default function Squad () {
 
   return (
     <div className="page">
-      <div className="mt-32 between wrap gap-16">
-        <div style={{ minWidth: 0 }}>
-          <div className="eyebrow">{isMine ? 'Your squad' : viewing.profiles?.name ?? 'Manager'}</div>
-          <h1 className="h1 mt-8 truncate">{viewing.team_name}</h1>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div className="eyebrow">GW {gw} points</div>
-          <div className="num" style={{ fontSize: 'clamp(30px, 8vw, 44px)', lineHeight: 1 }}>
-            {gwPoints}
+      <PageHead
+        title={viewing.team_name}
+        meta={isMine ? 'Your squad' : `Managed by ${viewing.profiles?.name ?? 'a manager'}`}
+        aside={
+          <div style={{ textAlign: 'right' }}>
+            <div className="figure" style={{ fontSize: 'clamp(44px, 11vw, 64px)' }}>
+              {gwPoints}
+            </div>
+            <div className="eyebrow" style={{ marginTop: 6 }}>Gameweek {gw}</div>
           </div>
-        </div>
-      </div>
+        } />
 
-      <div className="mt-16 row gap-8 wrap">
+      <div className="row gap-8 wrap">
         {gwOptions.length > 1 && (
           <Segmented value={String(gw)} onChange={v => setGw(Number(v))} options={gwOptions} />
         )}
@@ -205,15 +204,16 @@ export default function Squad () {
                       highlight={canSwapWith(p)}
                       interactive={isMine}
                       onTap={() => onTap(p)}
-                      trailing={isMine && (
-                        <span className="row gap-4">
-                          <button className="btn quiet" aria-label="Move up" disabled={i === 0 || saving}
-                            onClick={e => { e.stopPropagation(); moveBench(p.player_id, -1) }}>↑</button>
-                          <button className="btn quiet" aria-label="Move down"
+                      trailing={isMine ? (
+                        <span className="row-aside">
+                          <button className="nudge" aria-label={`Move ${p.web_name} up the bench`}
+                            disabled={i === 0 || saving}
+                            onClick={() => moveBench(p.player_id, -1)}><IconChevron dir="up" size={13} /></button>
+                          <button className="nudge" aria-label={`Move ${p.web_name} down the bench`}
                             disabled={i === bench.length - 1 || saving}
-                            onClick={e => { e.stopPropagation(); moveBench(p.player_id, 1) }}>↓</button>
+                            onClick={() => moveBench(p.player_id, 1)}><IconChevron dir="down" size={13} /></button>
                         </span>
-                      )} />
+                      ) : undefined} />
                   ))}
                 </ul>
                 <p className="tiny muted mt-8">
@@ -230,9 +230,9 @@ export default function Squad () {
         .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
         .squad-list-col { max-width: 640px; }
         .bench-chip {
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 5px 10px; border-radius: 99px;
-          border: 1px solid var(--line); background: var(--surface);
+          display: inline-flex; align-items: center; gap: 7px;
+          padding: 5px 9px; border-radius: var(--r-sm);
+          border: 1px solid var(--rule); background: var(--stock-2);
           font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;
         }
         @media (min-width: 1000px) {
@@ -290,16 +290,20 @@ function PlayerRow ({
   const flag = availability(p.status)
   const Tag = interactive ? 'button' : 'div'
   return (
-    <li>
+    // The reorder controls sit *beside* the row's hit target, not inside it.
+    // Nested buttons are invalid HTML, and a browser that recovers from them
+    // does so by making the inner control unreachable by keyboard.
+    <li className={trailing ? 'row-with-aside' : undefined}>
       <Tag
         className={`list-row ${selected ? 'is-selected' : ''} ${p.locked ? 'is-disabled' : ''}`}
-        style={highlight ? { boxShadow: 'inset 3px 0 0 var(--green)' } : undefined}
+        // A hairline marker, not a slab of colour down the edge of the row.
+        style={highlight ? { boxShadow: 'inset 1px 0 0 var(--up)', background: 'var(--up-deep)' } : undefined}
         {...(interactive ? { onClick: onTap, disabled: p.locked } : {})}
       >
         {lead}
         <span className="grow" style={{ minWidth: 0 }}>
           <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
-          <span className="row gap-6 tiny muted" style={{ marginTop: 1 }}>
+          <span className="row gap-6 tiny muted" style={{ marginTop: 2 }}>
             <span className="club">{p.club_short ?? '—'}</span>
             {p.locked
               ? <span className="locked"><IconLock /> {p.minutes > 0 ? `${p.minutes}'` : 'Kicked off'}</span>
@@ -307,11 +311,11 @@ function PlayerRow ({
             {flag && <span style={{ color: flag.tone }}>· {flag.label}</span>}
           </span>
         </span>
-        <span className="num" style={{ width: 38, textAlign: 'right', fontWeight: 600 }}>
+        <span className="num" style={{ width: 38, textAlign: 'right', fontWeight: 700 }}>
           {p.gw_points}
         </span>
-        {trailing}
       </Tag>
+      {trailing}
     </li>
   )
 }

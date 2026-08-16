@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
+import { PageHead } from '../components/ui'
 
 export default function JoinLeague () {
   const { code: codeParam } = useParams()
@@ -26,19 +27,18 @@ export default function JoinLeague () {
     <>
       <header className="masthead">
         <div className="masthead-inner">
-          <Link to="/" className="eyebrow">← All leagues</Link>
+          <Link to="/" className="btn quiet">← All leagues</Link>
           <div className="wordmark">The&nbsp;<i>Draft</i></div>
         </div>
       </header>
 
       <div className="page">
         <div style={{ maxWidth: 440, margin: '0 auto' }}>
-          <div className="mt-40">
-            <div className="eyebrow">Invitation</div>
-            <h1 className="h1 mt-8">Join a league</h1>
-          </div>
+          <PageHead
+            title="Join a league"
+            meta="Paste the six-character code somebody sent you." />
 
-          <form onSubmit={submit} className="slab mt-24 stack gap-16">
+          <form onSubmit={submit} className="slab stack gap-16">
             <label className="field">
               <span className="label">Invite code</span>
               <input className="input code" required minLength={6} maxLength={6}

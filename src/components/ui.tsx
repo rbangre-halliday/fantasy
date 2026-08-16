@@ -6,8 +6,34 @@ import type { Position } from '../lib/types'
 export const PosChip = ({ pos }: { pos: Position }) =>
   <span className={`pos ${pos}`}>{pos}</span>
 
+/** A section heading: small, hard, with a rule running out to the margin. */
 export function Eyebrow ({ children }: { children: ReactNode }) {
   return <div className="eyebrow-rule"><span className="eyebrow">{children}</span></div>
+}
+
+/**
+ * Every screen opens the same way.
+ *
+ * The old pattern put a tracked-out grey label *above* the title — "GOOD TO
+ * SEE YOU", "STEP ONE OF ONE". A kicker like that asks to be read first and
+ * then turns out to say nothing; the heading was always carrying the screen on
+ * its own. So the context moves underneath, where it reads as the second half
+ * of the sentence, and the title gets the top of the page to itself.
+ */
+export function PageHead ({ title, meta, aside }: {
+  title: ReactNode
+  meta?: ReactNode
+  aside?: ReactNode
+}) {
+  return (
+    <header className="page-head">
+      <div className="grow">
+        <h1 className="h1">{title}</h1>
+        {meta && <p className="standfirst">{meta}</p>}
+      </div>
+      {aside}
+    </header>
+  )
 }
 
 export function Notice ({ kind = 'plain', children }: { kind?: 'plain' | 'error' | 'good' | 'warn'; children: ReactNode }) {
@@ -22,7 +48,9 @@ export function Loading ({ rows = 6 }: { rows?: number }) {
   return (
     <div className="stack gap-8 mt-16" aria-busy="true" aria-label="Loading">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="skel" style={{ height: 44, opacity: 1 - i * 0.1 }} />
+        // Staggered start, so the column breathes as a run of rows rather than
+        // as one block flashing in unison.
+        <div key={i} className="skel" style={{ height: 44, animationDelay: `${i * 90}ms` }} />
       ))}
     </div>
   )
@@ -123,6 +151,24 @@ export const IconStar = ({ filled }: { filled?: boolean }) => (
     <path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 16.9l-5.2 2.7 1-5.75-4.2-4.1 5.8-.85z" />
   </svg>
 )
+
+/**
+ * One chevron, four directions. Typographic arrows (→ ↑ ⇄) borrowed from the
+ * character set never match the stroke weight of a drawn icon set, and the
+ * mismatch is visible the moment they sit next to one.
+ */
+export const IconChevron = ({ dir = 'right', size = 15 }: {
+  dir?: 'up' | 'down' | 'left' | 'right'
+  size?: number
+}) => {
+  const turn = { right: 0, down: 90, left: 180, up: 270 }[dir]
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} {...stroke} aria-hidden="true"
+      style={{ transform: `rotate(${turn}deg)` }}>
+      <path d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
 
 export const IconLock = () => (
   <svg viewBox="0 0 24 24" width="11" height="11" {...stroke}><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>

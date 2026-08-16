@@ -154,46 +154,51 @@ export default function DraftRoom () {
 
   return (
     <div className="page">
-      {/* ---- the clock ------------------------------------------------- */}
-      <div className={`slab sticky-head mt-24 ${myTurn ? 'red' : 'green'}`}>
+      {/* ---- the clock -------------------------------------------------
+          The only screen in the app with a genuine deadline on it, so it is
+          the only one that gets a block of colour this big: aubergine while
+          you wait, crimson the moment it's your pick. */}
+      <div className={`slab sticky-head mt-32 ${myTurn ? 'red' : 'green'}`}>
         {complete ? (
           <>
-            <div className="eyebrow">Draft complete</div>
-            <h1 className="h2 mt-8">Every squad is full. Good luck.</h1>
-            <p className="small muted mt-8">Set your starting XI on the Squad tab.</p>
+            <h1 className="h2">Every squad is full. Good luck.</h1>
+            <p className="small muted mt-8">
+              Draft complete · set your starting XI on the Squad tab.
+            </p>
           </>
         ) : (
           <div className="between wrap gap-16">
             <div style={{ minWidth: 0 }}>
-              <div className="eyebrow">
-                Round {draft.current_round} · Pick {draft.current_pick} of {totalPicks}
-              </div>
-              <h1 className="h2 mt-8 truncate">
+              <h1 className="h2 truncate">
                 {myTurn ? 'You’re on the clock' : onClockTeam ?? '—'}
               </h1>
-              {draft.status === 'paused' && (
-                <div className="small muted mt-8">Paused by the commissioner</div>
-              )}
+              <div className="small muted mt-8">
+                Round {draft.current_round} · pick {draft.current_pick} of {totalPicks}
+                {draft.status === 'paused' && ' · paused by the commissioner'}
+              </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div className="eyebrow">{draft.status === 'paused' ? 'Held' : 'Time left'}</div>
-              <div className="num" style={{
-                fontSize: 'clamp(34px, 9vw, 50px)',
-                lineHeight: 1,
+              <div className="figure" style={{
+                fontSize: 'clamp(46px, 11vw, 68px)',
+                fontVariantNumeric: 'tabular-nums',
                 color: remaining !== null && remaining < 20000 && running
-                  ? 'var(--red)' : 'var(--ink)'
+                  ? 'var(--live)' : 'var(--fg)'
               }}>
                 {draft.status === 'paused'
                   ? clock(draft.paused_remaining_ms ?? 0)
                   : clock(remaining ?? 0)}
+              </div>
+              <div className="eyebrow" style={{ marginTop: 6 }}>
+                {draft.status === 'paused' ? 'Held' : 'Time left'}
               </div>
             </div>
           </div>
         )}
 
         {isCommissioner && !complete && (
-          <div className="row gap-8 wrap mt-16" style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
+          <div className="row gap-8 wrap mt-24"
+            style={{ borderTop: '1px solid rgba(255,255,255,.12)', paddingTop: 16 }}>
             {draft.status === 'running'
               ? <button className="btn sm ghost" disabled={busy}
                   onClick={() => void commish(() => api.pauseDraft(league.id), 'Draft paused')}>Pause</button>

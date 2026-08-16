@@ -1,93 +1,152 @@
 /* ==========================================================================
    THE DRAFT — design system
 
-   Near-black canvas, hairline structure, one electric accent, monospaced
-   figures. Restraint is the whole idea: almost everything is greyscale, so
-   the single lime accent always means "this is the thing to act on", and red
-   always means "this is live or irreversible". Nothing else gets colour.
+   A football weekly printed in ultraviolet ink on black newsprint.
 
-   Type is one family at two extremes — Manrope, very light for display and
-   semibold for UI — with JetBrains Mono for anything numeric so columns of
-   figures lock to a grid.
+   Three commitments, and everything else follows from them:
+
+   1. Structure is drawn with hairlines and flat blocks, never with glow.
+      There is not one radial wash, coloured halo or gradient in this file.
+      A dark UI that reads as "lit" is the single most tired tell in software;
+      this one reads as *printed*, which is what a results page should be.
+   2. Type carries the voice. One family — Archivo — at two widths: heavily
+      condensed caps for anything that shouts, normal width for everything you
+      actually read. The width axis is the second typeface.
+   3. Colour is a role, not decoration. Ultraviolet is the app talking to you
+      (act here, this is selected). Crimson means live or irreversible. Green
+      means available, gold means top of the table. Nothing else gets any.
    ========================================================================== */
+
+/* Archivo, by Omnibus-Type — SIL Open Font License 1.1. One variable file per
+   subset, carrying both the weight and the width axis; `font-display: swap`
+   so a slow font never blanks the page. latin-ext is not optional here:
+   Ødegaard, Šeško, Milenković and Aït-Nouri all live outside latin-1. */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 75% 100%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 75% 100%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
 :root {
   /* ---- ground ----
-     Not neutral black: every surface carries a trace of the violet, which is
-     what stops a dark UI reading as grey and flat. */
-  --bg:          #08080D;
-  --bg-2:        #0C0C14;
-  --surface:     #12121C;
-  --surface-2:   #191926;
-  --surface-3:   #222233;
+     Near-black with the faintest plum cast, so the purple family sits on it
+     as ink on stock rather than as light on glass. */
+  --stock-0:  #08070A;   /* page */
+  --stock-1:  #0E0C11;   /* inset — inputs, wells */
+  --stock-2:  #151219;   /* raised — surfaces, hover */
+  --stock-3:  #1D1922;   /* raised further — chips, toasts */
 
-  /* ---- structure ---- */
-  --line:        #23233A;
-  --line-2:      #2F2F4A;
-  --line-bright: #414163;
+  /* ---- structure ----
+     Two weights of hairline. Everything is built out of these. */
+  --rule:   #272231;
+  --rule-2: #3A3347;
 
   /* ---- type ---- */
-  --text:        #F5F4FF;
-  --text-2:      #A9A7C0;
-  --text-3:      #6E6C8A;
+  --fg:     #F3F0F6;
+  --fg-2:   #ABA2B5;
+  --fg-3:   #8C8398;   /* still 5.1:1 on --stock-2; "quiet" is not "unreadable" */
 
-  /* ---- primary action ----
-     One saturated violet, used with conviction. It carries every primary
-     action, the live selection, and the glow — so the eye always knows where
-     the app wants it. */
-  --accent:      #7C5CFF;
-  --accent-2:    #9B85FF;
-  --accent-dim:  #5F45D6;
-  --accent-ink:  #FFFFFF;
-  --accent-wash: rgba(124, 92, 255, .14);
-  --accent-edge: rgba(124, 92, 255, .48);
-  --accent-glow: 0 8px 32px -8px rgba(124, 92, 255, .55);
+  /* ---- ultraviolet: the app's own voice ----
+     Sitting at ~295° rather than the usual 265°, which is the difference
+     between Premier League aubergine and every generated dashboard on earth.
+     Four stops, four jobs, no gradients between them. */
+  --uv-block: #2A0733;   /* flat block fill — the hero surface */
+  --uv-line:  #5C2172;   /* the block's edge */
+  --uv:       #A03FD8;   /* controls, rules, marks — 4.0:1, UI-legible */
+  --uv-lift:  #CE8CFF;   /* marks only: underlines, carets, focus, selection */
+  --uv-pale:  #EBD9F7;   /* primary fill; takes near-black type at 14.6:1 */
+  --uv-type:  #D8C4EC;   /* purple set as TYPE — see the note below */
+  --uv-ink:   #150720;   /* type on any pale or lifted fill */
+  --uv-sel:   #1F0F2B;   /* flat selection wash — opaque, so it never stacks */
+
+  /* Why two purples for foreground: a vivid violet set as *text* on black is
+     the exact note that reads as cheap — it glows, and it is the single most
+     over-used colour in generated dark UI. So --uv-lift only ever draws marks
+     (an underline, a caret, a focus ring, a selection bar) and --uv-type is
+     what carries letterforms: a soft lilac ink, plainly purple beside white,
+     with a third of the chroma. Purple stays loud where it is a block of
+     colour and goes quiet where it is a word. */
 
   /* ---- state, and only state ---- */
-  --live:        #FF5C45;
-  --live-wash:   rgba(255, 92, 69, .12);
-  --live-edge:   rgba(255, 92, 69, .34);
-  --up:          #4ADE80;
-  --up-wash:     rgba(74, 222, 128, .12);
-  --gold:        #E8C468;
-  --gold-wash:   rgba(232, 196, 104, .12);
+  --live:      #FF3D71;  /* live, urgent, irreversible */
+  --live-deep: #3A0417;
+  --live-ink:  #2B0210;
+  --up:        #25D98C;  /* available, accepted */
+  --up-deep:   #06251A;
+  --gold:      #E5B84B;  /* top of the table */
+  --gold-deep: #2A1F06;
 
   /* ---- compatibility aliases -------------------------------------------
-     Screens written against the previous palette keep working; these map the
-     old names onto the new one so no route has to know the theme changed. */
-  --paper:       var(--bg);
-  --paper-2:     var(--surface);
-  --paper-3:     var(--surface-2);
-  --rule:        var(--line);
-  --rule-strong: var(--line-2);
-  --ink:         var(--text);
-  --ink-2:       var(--text-2);
-  --ink-3:       var(--text-3);
-  --green:       var(--up);
-  --green-2:     var(--up);
-  --green-tint:  var(--up-wash);
-  --red:         var(--live);
-  --red-tint:    var(--live-wash);
-  --gold-tint:   var(--gold-wash);
+     Screens still name colours from the previous palette in inline styles.
+     Mapping them here means the theme is defined in exactly one place. */
+  --bg: var(--stock-0);      --bg-2: var(--stock-1);
+  --surface: var(--stock-2); --surface-2: var(--stock-3); --surface-3: var(--stock-3);
+  --paper: var(--stock-0);   --paper-2: var(--stock-2);   --paper-3: var(--stock-3);
+  --line: var(--rule);     --line-2: var(--rule-2);   --line-bright: var(--rule-2);
+  --rule-strong: var(--rule-2);
+  --text: var(--fg);       --text-2: var(--fg-2);     --text-3: var(--fg-3);
+  --ink: var(--fg);        --ink-2: var(--fg-2);      --ink-3: var(--fg-3);
+  --accent: var(--uv);     --accent-2: var(--uv-lift);
+  --accent-ink: var(--uv-ink);
+  --accent-edge: var(--uv-line);
+  --accent-wash: var(--uv-sel);
+  --red: var(--live);      --red-tint: var(--live-deep);
+  --green: var(--up);      --green-2: var(--up);      --green-tint: var(--up-deep);
+  --gold-tint: var(--gold-deep);
 
-  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* ---- type ----
+     Archivo carries a width axis, so display and UI are the same face at two
+     very different widths. One request, two voices, nothing to mismatch. */
+  --font: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  --font-body: var(--font);
+  --font-display: var(--font);
+  --font-mono: var(--font);
 
-  --radius:    12px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
+  /* ---- geometry ----
+     Nearly square. A 12px radius on everything is what makes a UI read as
+     assembled from a component library; 3px reads as printed. */
+  --r:    3px;
+  --r-sm: 2px;
+  --r-lg: 4px;
+  --radius: var(--r); --radius-sm: var(--r-sm); --radius-lg: var(--r-lg);
 
-  --page:   1160px;
-  --gut:    clamp(18px, 4vw, 40px);
-  --tabbar: calc(62px + env(safe-area-inset-bottom));
-  /* Height of the sticky masthead, so anything else that sticks can sit below
-     it instead of sliding underneath. */
-  --head-h: calc(63px + env(safe-area-inset-top));
+  /* ---- rhythm ----
+     Deliberately uneven: tight inside a group, wide between them. */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 36px; --s-7: 56px; --s-8: 88px;
 
-  --ease: cubic-bezier(.22, 1, .36, 1);
+  --page:   1120px;
+  --gut:    clamp(20px, 4.5vw, 44px);
+  --tabbar: calc(58px + env(safe-area-inset-bottom));
+  --head-h: calc(57px + env(safe-area-inset-top));
+
+  /* Exponential ease-out. Never bounce, never elastic. */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+
+  /* Elevation is offset plus blur, and it is neutral. Overlays only — a
+     hairline border and a wide shadow on the same element is the other
+     generated-UI signature, so surfaces get one or the other, never both. */
+  --lift: 0 18px 40px -16px rgba(0, 0, 0, .9);
 
   color-scheme: dark;
+  accent-color: var(--uv);
 }
 
 /* --------------------------------------------------------------- reset --- */
@@ -97,193 +156,319 @@ html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
+  background: var(--stock-0);
+  color: var(--fg);
+  font-family: var(--font);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 450;
   line-height: 1.5;
-  letter-spacing: -.006em;
+  letter-spacing: -.004em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
-
-  /* One very soft bloom behind the top of the page. Barely visible, but it
-     stops the black reading as flat card stock. */
-  /* The violet bloom is what makes the dark feel lit rather than switched off. */
-  background-image:
-    radial-gradient(1000px 560px at 50% -14%, rgba(124, 92, 255, .20), transparent 70%),
-    radial-gradient(700px 420px at 92% 8%, rgba(72, 200, 255, .07), transparent 66%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
 }
 
-h1, h2, h3, h4 { margin: 0; font-weight: 500; }
-p { margin: 0; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+
+/* Prose carries a measure by default. Screens here are up to 1120px wide and a
+   paragraph will happily run the whole way across it, which is about 100
+   characters — past the point where the eye reliably finds the next line. */
+p { margin: 0; max-width: 72ch; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
 
+/* The surfaces we didn't draw still belong to the design. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--uv-lift);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
-::selection { background: var(--accent); color: var(--accent-ink); }
+::selection { background: var(--uv-lift); color: var(--uv-ink); }
+input, textarea { caret-color: var(--uv-lift); }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; border: 3px solid var(--bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--line-bright); }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--stock-0); }
+::-webkit-scrollbar-thumb { background: var(--rule-2); border: 3px solid var(--stock-0); }
+::-webkit-scrollbar-thumb:hover { background: #4C4459; }
+* { scrollbar-color: var(--rule-2) var(--stock-0); }
 
-/* ---------------------------------------------------------- typography --- */
+/* ---------------------------------------------------------- typography ---
 
-/* Display sizes go light and tight — at 40px+ a 200 weight reads as
-   confident rather than thin, and it's what keeps the UI feeling calm. */
+   Two voices from one family. Display is condensed to 78% and set in caps at
+   800 — the width axis does what a second display face would, without the
+   second request or the risk of a mismatched pairing. Reading sizes stay at
+   normal width where Archivo is a plain, quiet grotesque.
+   -------------------------------------------------------------------------- */
+
 .h1 {
-  font-family: var(--font-display);
-  font-size: clamp(34px, 6.4vw, 58px);
-  font-weight: 200;
-  line-height: 1.02;
-  letter-spacing: -.035em;
-}
-.h2 {
-  font-family: var(--font-display);
-  font-size: clamp(23px, 3.4vw, 32px);
-  font-weight: 300;
-  line-height: 1.1;
-  letter-spacing: -.028em;
-}
-.h3 {
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -.018em;
-}
-
-.eyebrow {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .14em;
+  font-family: var(--font);
+  font-stretch: 78%;
+  font-weight: 800;
   text-transform: uppercase;
-  color: var(--text-3);
+  font-size: clamp(40px, 7.4vw, 68px);
+  line-height: .9;
+  letter-spacing: .002em;   /* condensed caps want air, not crushing */
 }
 
-.eyebrow-rule { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-.eyebrow-rule::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.h2 {
+  font-family: var(--font);
+  font-stretch: 82%;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(24px, 3.6vw, 34px);
+  line-height: .98;
+  letter-spacing: .006em;
+}
 
+.h3 {
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.22;
+  letter-spacing: -.014em;
+}
+
+/* Section heading — a real heading, set small and hard, with a rule running
+   out to the margin. Not a kicker: nothing sits under it but its own list. */
+.eyebrow {
+  font-family: var(--font);
+  font-stretch: 88%;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+a.eyebrow, button.eyebrow { transition: color .16s var(--ease); }
+a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
+
+.eyebrow-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.eyebrow-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.eyebrow-rule .eyebrow { color: var(--fg); }
+
+/* The opening block of every screen. Generous above so the title clears the
+   masthead, tighter below so it binds to what it introduces. */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  padding: var(--s-7) 0 var(--s-6);
+}
+.page-head .h1 { overflow-wrap: anywhere; text-wrap: balance; }
+.page-head .grow { min-width: min(100%, 280px); }
+
+/* A line of context that belongs *under* a heading, where it can be read as
+   part of the sentence rather than shouted over the top of it. */
+.standfirst {
+  margin-top: var(--s-3);
+  max-width: 62ch;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+/* Figures line up in a column and sit at one weight heavier than the prose
+   around them, the way a printed league table sets them. */
 .num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  font-weight: 550;
+  letter-spacing: -.01em;
 }
 
-.muted { color: var(--text-3); }
-.small { font-size: 13px; }
-.tiny  { font-size: 11.5px; }
+/* Big figures — the clock, a score, an invite code. Condensed so six digits
+   still fit a phone, and set solid. */
+.figure {
+  font-stretch: 80%;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: .88;
+  letter-spacing: -.01em;
+}
+
+.muted { color: var(--fg-3); }
+.small { font-size: 13.5px; }
+.tiny  { font-size: 12px; }
 
 /* -------------------------------------------------------------- layout --- */
 
 .page {
   max-width: var(--page);
   margin: 0 auto;
-  padding: 0 var(--gut) calc(var(--tabbar) + 40px);
+  padding: 0 var(--gut) calc(var(--tabbar) + var(--s-7));
 }
 @media (min-width: 880px) {
-  .page { padding-bottom: 80px; }
-  :root { --head-h: 106px; }
+  .page { padding-bottom: var(--s-8); }
+  :root { --head-h: 101px; }
 }
 
-/* Lists of a few columns shouldn't stretch to 1440px — the eye loses the row
-   between the name on the left and the number on the right. */
-.page.narrow { max-width: 860px; }
+.page.narrow { max-width: 820px; }
 
-/* A long list that scrolls inside its own box, so the page stays a sane
-   height no matter how many rows there are. */
+/* A long list that scrolls inside its own box, so the page stays a sane height
+   however many rows there are. The fade is an affordance, not decoration: a
+   ruled list clipped mid-row at a hard edge reads as a rendering fault, and
+   this is what says "there is more of this below". */
 .scroll-pane {
   max-height: min(62vh, 560px);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 22px), transparent 100%);
 }
 @media (min-width: 940px) { .scroll-pane { max-height: calc(100vh - 300px); } }
 
-/* .sticky-head lives at the very end of this file — it has to beat .slab's
-   `position: relative`, and a same-specificity rule only wins by coming later. */
-
 .stack   { display: flex; flex-direction: column; }
 .row     { display: flex; align-items: center; }
-.between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.between { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
 .wrap    { flex-wrap: wrap; }
 .grow    { flex: 1; min-width: 0; }
 .gap-4  { gap: 4px; }  .gap-6  { gap: 6px; }  .gap-8  { gap: 8px; }
 .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
-.mt-8  { margin-top: 8px; }  .mt-16 { margin-top: 16px; }
-.mt-24 { margin-top: 24px; } .mt-32 { margin-top: 32px; } .mt-40 { margin-top: 44px; }
+
+/* The scale is uneven on purpose: 16 holds a group together, 36 separates
+   blocks, 56 separates sections. A heading always gets more room above it
+   than below it, which is what makes it read as introducing rather than
+   captioning. */
+.mt-8  { margin-top: var(--s-2); }
+.mt-16 { margin-top: var(--s-4); }
+.mt-24 { margin-top: var(--s-5); }
+.mt-32 { margin-top: var(--s-6); }
+.mt-40 { margin-top: var(--s-7); }
 
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ------------------------------------------------------------ masthead --- */
+/* ------------------------------------------------------------ masthead ---
+   Solid, not glass. A blurred translucent bar is a decoration; a black bar
+   with one hard rule under it is a masthead. */
 
 .masthead {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(8, 8, 13, .72);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border-bottom: 1px solid var(--line);
+  background: var(--stock-0);
+  border-bottom: 1px solid var(--rule-2);
   padding-top: env(safe-area-inset-top);
 }
 
 .masthead-inner {
   max-width: var(--page);
   margin: 0 auto;
-  padding: 14px var(--gut);
+  padding: 12px var(--gut);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--s-4);
+  min-height: 56px;
 }
 
 .wordmark {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -.03em;
-  line-height: 1.2;
+  font-stretch: 76%;
+  font-size: 21px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .022em;
+  line-height: 1;
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  color: var(--text);
+  gap: 7px;
+  color: var(--fg);
 }
-.wordmark i { font-style: normal; color: var(--accent); }
+.wordmark i { font-style: normal; color: var(--uv-type); }
 
+/* The one glyph in the masthead that has to stay a target on a phone. */
+.back-link {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: -7px;
+  font-size: 17px;
+  color: var(--fg-3);
+  border-radius: var(--r-sm);
+  transition: color .16s var(--ease), background .16s var(--ease);
+}
+.back-link:hover { color: var(--fg); background: var(--stock-2); }
+
+/* Sits beside the league name: what state this league is in, said quietly. */
+.status-tag {
+  flex: none;
+  padding: 3px 8px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+/* The account control yields to the league name as the bar gets narrower:
+   first the verb goes, then the name itself truncates. */
+.account { flex-shrink: 0; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 700px) {
+  .account-verb { display: none; }
+  /* "Lobby" and "In season" are restating what the screen already shows.
+     A live draft is the one status worth the width, so .live stays. */
+  .masthead .status-tag { display: none; }
+}
+
+/* A count on a tab is a number, not a decoration — set it as one. */
+.tab-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  background: var(--live);
+  color: var(--live-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  vertical-align: 1px;
+}
+
+/* Desktop tabs: an underline, not a glowing pill. */
 .tabs-desktop { display: none; }
 @media (min-width: 880px) {
   .tabs-desktop {
     display: flex;
-    gap: 4px;
+    gap: var(--s-5);
     max-width: var(--page);
     margin: 0 auto;
-    padding: 0 var(--gut) 10px;
+    padding: 0 var(--gut);
   }
   .tabs-desktop a {
-    padding: 7px 14px;
-    border-radius: 99px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: -.01em;
-    color: var(--text-3);
-    transition: color .18s var(--ease), background .18s var(--ease);
+    position: relative;
+    padding: 0 0 11px;
+    font-stretch: 88%;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    transition: color .16s var(--ease);
   }
-  .tabs-desktop a:hover { color: var(--text); background: var(--surface-2); }
-  .tabs-desktop a.active {
-    color: var(--accent-ink);
-    background: var(--accent);
-    box-shadow: var(--accent-glow);
+  .tabs-desktop a:hover { color: var(--fg-2); }
+  .tabs-desktop a.active { color: var(--fg); }
+  .tabs-desktop a.active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px;
+    background: var(--uv-lift);
   }
 }
 
@@ -294,10 +479,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  background: rgba(8, 8, 13, .86);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border-top: 1px solid var(--line);
+  background: var(--stock-0);
+  border-top: 1px solid var(--rule-2);
   padding-bottom: env(safe-area-inset-bottom);
 }
 @media (min-width: 880px) { .tabbar { display: none; } }
@@ -307,66 +490,86 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  height: 62px;
-  font-size: 10px;
+  gap: 5px;
+  height: 58px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .05em;
+  letter-spacing: .07em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--fg-3);
   position: relative;
-  transition: color .18s var(--ease);
+  transition: color .16s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.tabbar a.active { color: var(--accent-2); }
-.tabbar svg { width: 20px; height: 20px; }
+.tabbar a.active { color: var(--fg); }
+.tabbar a.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--uv-lift);
+}
+.tabbar svg { width: 19px; height: 19px; }
 .tabbar .dot {
   position: absolute;
-  top: 11px; left: 50%;
-  margin-left: 8px;
+  top: 9px; left: 50%;
+  margin-left: 9px;
   width: 6px; height: 6px;
-  border-radius: 50%;
   background: var(--live);
-  box-shadow: 0 0 0 2px var(--bg);
 }
 
 /* --------------------------------------------------------------- cards --- */
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  transition: border-color .2s var(--ease), background .2s var(--ease);
+  background: var(--stock-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  transition: border-color .16s var(--ease), background .16s var(--ease);
 }
-a.card:hover { border-color: var(--accent-edge); background: var(--surface-2); }
+a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(--stock-3); }
 
-.card-pad { padding: 18px; }
-@media (min-width: 640px) { .card-pad { padding: 22px; } }
+.card-pad { padding: var(--s-4); }
+@media (min-width: 640px) { .card-pad { padding: var(--s-5); } }
 
-/* The hero block on each screen. A whisper of accent in the gradient marks it
-   as the primary surface without adding another colour to the palette. */
+/* The hero block. One flat colour, one edge. Where the old sheet reached for
+   a gradient and a halo, this reaches for a block of ink — which is louder,
+   cheaper to render, and impossible to mistake for a template. */
 .slab {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, .028), transparent 42%),
-    var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 22px;
+  background: var(--stock-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  padding: var(--s-5);
   overflow: hidden;
 }
-.slab::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line-bright) 22%, var(--line-bright) 78%, transparent);
-}
-.slab.green { border-color: var(--accent-edge); box-shadow: 0 0 60px -30px rgba(124,92,255,.8); }
-.slab.green::before { background: linear-gradient(90deg, transparent, var(--accent-edge) 50%, transparent); }
+@media (min-width: 640px) { .slab { padding: 28px; } }
 
-/* Kairos-style hairline field: a faint rule with a crosshair at the corners.
-   Used to frame the hero on the landing page. */
+.slab.green {                       /* the app's own voice: act here */
+  background: var(--uv-block);
+  border-color: var(--uv-line);
+}
+.slab.green .muted,
+.slab.green .eyebrow { color: #B79BC6; }   /* tinted from the surface, never grey */
+
+.slab.red {                         /* live, or about to be irreversible */
+  background: var(--live-deep);
+  border-color: #7A1234;
+}
+.slab.red .muted, .slab.red .eyebrow { color: #D79AAB; }
+
+/* A ghost button on a coloured block has to take its edge from that block —
+   the neutral hairline it uses on black disappears completely here. */
+.slab.green .btn.ghost, .slab.red .btn.ghost {
+  border-color: rgba(255, 255, 255, .26);
+  color: var(--fg);
+}
+.slab.green .btn.ghost:hover:not(:disabled),
+.slab.red .btn.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, .09);
+  border-color: rgba(255, 255, 255, .45);
+}
+
+/* Corner ticks — a printer's registration mark, framing the landing hero. */
 .crosshair { position: relative; }
 .crosshair::before,
 .crosshair::after {
@@ -374,7 +577,7 @@ a.card:hover { border-color: var(--accent-edge); background: var(--surface-2); }
   position: absolute;
   left: 0; right: 0;
   height: 1px;
-  background: var(--line);
+  background: var(--rule);
   pointer-events: none;
 }
 .crosshair::before { top: 0; }
@@ -384,74 +587,80 @@ a.card:hover { border-color: var(--accent-edge); background: var(--surface-2); }
   position: absolute;
   width: 9px; height: 9px;
   pointer-events: none;
-  color: var(--line-bright);
+  color: var(--uv);
 }
-.mark::before, .mark::after {
-  content: '';
-  position: absolute;
-  background: currentColor;
-}
+.mark::before, .mark::after { content: ''; position: absolute; background: currentColor; }
 .mark::before { left: 4px; top: 0; width: 1px; height: 9px; }
 .mark::after  { top: 4px; left: 0; height: 1px; width: 9px; }
-.slab.red { border-color: var(--live-edge); }
-.slab.red::before { background: linear-gradient(90deg, transparent, var(--live-edge) 50%, transparent); }
 
-/* ------------------------------------------------------------- buttons --- */
+/* ------------------------------------------------------------- buttons ---
+   Squared, flat, and set in tracked caps. The primary is a pale lilac plate
+   with near-black type on it: 14.6:1, and it needs no glow to be found. */
 
 .btn {
-  --btn-bg: var(--accent);
-  --btn-fg: var(--accent-ink);
+  --btn-bg: var(--uv-pale);
+  --btn-fg: var(--uv-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--s-2);
   min-height: 44px;
   padding: 0 20px;
   background: var(--btn-bg);
   color: var(--btn-fg);
   border: 1px solid transparent;
-  border-radius: 99px;
-  font-size: 14px;
+  border-radius: var(--r-sm);
+  font-stretch: 90%;
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: -.012em;
+  letter-spacing: .085em;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform .16s var(--ease), filter .18s var(--ease),
-              background .18s var(--ease), border-color .18s var(--ease);
+  transition: background .16s var(--ease), color .16s var(--ease),
+              border-color .16s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.btn { box-shadow: var(--accent-glow); }
-.btn.ghost, .btn.quiet { box-shadow: none; }
-.btn:hover:not(:disabled)  { filter: brightness(1.1); transform: translateY(-1px); }
-.btn:active:not(:disabled) { transform: translateY(0); filter: brightness(.96); }
-.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn:hover:not(:disabled)  { background: #FFFFFF; }
+.btn:active:not(:disabled) { background: #D6BEE8; }
+.btn:disabled { opacity: .3; cursor: not-allowed; }
 
 .btn.block { width: 100%; }
-.btn.sm    { min-height: 34px; padding: 0 14px; font-size: 12.5px; }
-.btn.lg    { min-height: 52px; padding: 0 28px; font-size: 15px; }
+.btn.sm    { min-height: 34px; padding: 0 13px; font-size: 11px; letter-spacing: .09em; }
+.btn.lg    { min-height: 52px; padding: 0 28px; font-size: 13px; }
 
 .btn.ghost {
   --btn-bg: transparent;
-  --btn-fg: var(--text);
-  border-color: var(--line-2);
+  --btn-fg: var(--fg);
+  border-color: var(--rule-2);
 }
-.btn.ghost:hover:not(:disabled) {
-  background: var(--surface-2); border-color: var(--line-bright); filter: none;
-}
+.btn.ghost:hover:not(:disabled) { background: var(--stock-2); border-color: #4C4459; }
+.btn.ghost:active:not(:disabled) { background: var(--stock-3); }
 
-.btn.danger { --btn-bg: var(--live); --btn-fg: #fff; }
+.btn.danger { --btn-bg: var(--live); --btn-fg: var(--live-ink); }
+.btn.danger:hover:not(:disabled) { background: #FF6489; }
 
+/* Text-only. Underlines on hover, because a control that only changes colour
+   is a control you have to guess at. */
 .btn.quiet {
   --btn-bg: transparent;
-  --btn-fg: var(--text-2);
+  --btn-fg: var(--fg-2);
   min-height: 32px;
-  padding: 0 4px;
+  padding: 0 2px;
+  font-stretch: 100%;
   font-weight: 600;
-  font-size: 13px;
-  border-radius: 6px;
+  font-size: 12.5px;
+  letter-spacing: .01em;
+  text-transform: none;
+  border-radius: var(--r-sm);
 }
 .btn.quiet:hover:not(:disabled) {
-  --btn-fg: var(--text); background: transparent; filter: none; transform: none;
+  --btn-fg: var(--fg);
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--rule-2);
 }
 
 /* --------------------------------------------------------------- forms --- */
@@ -459,150 +668,176 @@ a.card:hover { border-color: var(--accent-edge); background: var(--surface-2); }
 .field { display: flex; flex-direction: column; gap: 7px; }
 
 .label {
-  font-size: 10.5px;
+  font-stretch: 88%;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .13em;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--fg-3);
 }
 
 .input {
   width: 100%;
-  min-height: 48px;
-  padding: 12px 15px;
-  background: var(--bg-2);
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 16px; /* 16px stops iOS zooming on focus */
-  font-weight: 500;
-  transition: border-color .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease);
+  min-height: 46px;
+  padding: 11px 14px;
+  background: var(--stock-1);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
+  color: var(--fg);
+  font-size: 16px;      /* 16px stops iOS zooming on focus */
+  font-weight: 450;
+  transition: border-color .16s var(--ease), background .16s var(--ease);
 }
-.input:hover { border-color: var(--line-bright); }
+.input:hover { border-color: #4C4459; }
 .input:focus {
-  outline: none;
-  background: var(--surface);
-  border-color: var(--accent-edge);
-  box-shadow: 0 0 0 3px var(--accent-wash);
+  outline: 2px solid var(--uv-lift);
+  outline-offset: -1px;
+  border-color: var(--uv-lift);
+  background: var(--stock-2);
 }
-.input::placeholder { color: var(--text-3); }
+.input::placeholder { color: var(--fg-3); }
 
 .input.code {
-  font-family: var(--font-mono);
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: .32em;
-  text-indent: .32em;
+  font-stretch: 80%;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: .3em;
+  text-indent: .3em;
   text-align: center;
   text-transform: uppercase;
+  min-height: 64px;
 }
 
-/* ------------------------------------------------------------ position --- */
+/* ------------------------------------------------------------ position ---
+   Position is wayfinding, not data. Four colours here was the noisiest thing
+   on the board — the letters already say which is which, so they all get the
+   same quiet tag and the eye is left free for the numbers. */
 
-/* Positions are wayfinding, not data — so they stay greyscale and lean on
-   letterform weight, with only a faint tint to separate them. */
 .pos {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 21px;
-  padding: 0 7px;
-  border-radius: 5px;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
+  min-width: 38px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  font-stretch: 86%;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .06em;
-  border: 1px solid var(--line-2);
-  background: var(--surface-2);
-  color: var(--text-2);
+  letter-spacing: .07em;
+  border: 1px solid var(--rule-2);
+  background: var(--stock-2);
+  color: var(--fg-2);
 }
-.pos.GK  { color: #E8C468; border-color: rgba(232, 196, 104, .26); background: rgba(232, 196, 104, .08); }
-.pos.DEF { color: #7DB8F0; border-color: rgba(125, 184, 240, .26); background: rgba(125, 184, 240, .08); }
-.pos.MID { color: #A8E85C; border-color: rgba(168, 232, 92, .26);  background: rgba(168, 232, 92, .08); }
-.pos.FWD { color: #F2856B; border-color: rgba(242, 133, 107, .26); background: rgba(242, 133, 107, .08); }
+/* Goalkeepers are the one position you can't substitute across, so they get
+   the one differentiator. */
+.pos.GK { color: var(--fg); border-color: #4C4459; background: var(--stock-3); }
 
 .club {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--text-3);
-  letter-spacing: .02em;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--fg-3);
+  letter-spacing: .09em;
   text-transform: uppercase;
 }
 
 /* ---------------------------------------------------------- live cues ---- */
 
+/* No pulsing dot. A solid crimson plate is louder than an animation, and it
+   doesn't twitch in the corner of your eye while you're reading a table. */
 .live {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 11px 4px 9px;
-  border-radius: 99px;
-  background: var(--live-wash);
-  border: 1px solid var(--live-edge);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--live);
-}
-.live::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: 50%;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
   background: var(--live);
-  box-shadow: 0 0 0 0 var(--live-edge);
-  animation: ping 1.8s var(--ease) infinite;
-}
-@keyframes ping {
-  0%       { box-shadow: 0 0 0 0 rgba(255, 92, 69, .5); opacity: 1; }
-  70%      { box-shadow: 0 0 0 7px rgba(255, 92, 69, 0); opacity: .85; }
-  100%     { box-shadow: 0 0 0 0 rgba(255, 92, 69, 0); opacity: 1; }
+  color: var(--live-ink);
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
 }
 
 .locked {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10.5px;
-  color: var(--text-3);
+  font-size: 11.5px;
+  color: var(--fg-3);
 }
 
-/* -------------------------------------------------------------- lists ---- */
+/* -------------------------------------------------------------- lists ----
 
-.list { border-top: 1px solid var(--line); }
+   Rows are ruled, not boxed. Sixteen bordered cards in a column is sixteen
+   times the visual noise of sixteen ruled lines, and it reads worse. */
+
+.list { border-top: 1px solid var(--rule); }
 
 .list-row {
   display: flex;
   align-items: center;
-  gap: 13px;
-  width: 100%;
+  gap: var(--s-3);
+  width: calc(100% + 24px);
   padding: 13px 12px;
   margin: 0 -12px;
-  width: calc(100% + 24px);
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--rule);
   border-radius: 0;
   background: none;
   color: inherit;
   text-align: left;
-  transition: background .16s var(--ease);
+  transition: background .14s var(--ease);
 }
 button.list-row, a.list-row { cursor: pointer; }
-button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surface); }
-.list-row.is-disabled { opacity: .38; }
+button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--stock-2); }
+.list-row.is-disabled { opacity: .58; }   /* a locked row still shows real points */
+
+/* Selection is a flat opaque wash plus a hairline marker. Translucent washes
+   stack unpredictably on hover and make contrast a function of what's behind
+   them; an opaque one is always the colour you specified. */
 .list-row.is-selected {
-  background: var(--accent-wash);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--uv-sel);
+  box-shadow: inset 1px 0 0 var(--uv-lift);
 }
+.list-row.is-selected .name { color: var(--fg); }
 
-.name { font-weight: 600; font-size: 14.5px; letter-spacing: -.014em; }
+.name { font-weight: 600; font-size: 14.5px; letter-spacing: -.012em; }
 
-/* A row with its own star control sitting outside the main hit target, so
-   shortlisting never risks firing a pick. */
 .pick-row { display: flex; align-items: stretch; }
 .pick-row .list-row { margin-right: -12px; }
+
+/* A row whose own controls live beside the hit target rather than inside it.
+   The aside carries the rule so the row still reads as one ruled line. */
+.row-with-aside { display: flex; align-items: stretch; }
+.row-with-aside .list-row { flex: 1; width: auto; margin-right: 0; }
+
+.row-aside {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 12px 0 8px;
+  margin-right: -12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.nudge {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--fg-3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color .14s var(--ease), border-color .14s var(--ease);
+}
+.nudge:hover:not(:disabled) { color: var(--fg); border-color: var(--rule-2); }
+.nudge:disabled { opacity: .3; cursor: not-allowed; }
 
 .star {
   flex: none;
@@ -611,84 +846,122 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
   place-items: center;
   margin-left: -12px;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--rule);
   background: none;
-  color: var(--line-bright);
+  color: var(--rule-2);
   cursor: pointer;
-  transition: color .16s var(--ease), transform .16s var(--ease);
+  transition: color .14s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.star:hover { color: var(--text-2); }
+.star:hover { color: var(--fg-2); }
 .star.on { color: var(--gold); }
-.star.on:active { transform: scale(.85); }
 
 .thead {
   display: flex;
-  gap: 13px;
-  padding: 0 12px 9px;
+  gap: var(--s-3);
+  padding: 0 12px 8px;
   margin: 0 -12px;
-  border-bottom: 1px solid var(--line);
-  font-size: 9.5px;
+  border-bottom: 1px solid var(--rule-2);
+  font-stretch: 88%;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .12em;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--fg-3);
 }
 
 /* --------------------------------------------------------- segmented ----- */
 
 .seg {
-  display: inline-flex;
-  padding: 3px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 99px;
-  gap: 3px;
+  display: flex;
+  /* Sizes to its buttons, not to its parent — inside a stretching column an
+     inline-flex still fills the row and leaves a dead strip of border. */
+  width: max-content;
+  max-width: 100%;
+  align-self: flex-start;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
   overflow-x: auto;
   scrollbar-width: none;
-  max-width: 100%;
+  /* The cells deliberately run edge to edge and divide with hairlines: that
+     joined track IS the control. Insetting them would turn it back into a
+     row of pills, which is the shape this design is getting away from. */
 }
 .seg::-webkit-scrollbar { display: none; }
 
 .seg button {
   flex: none;
-  min-height: 32px;
+  min-height: 36px;
   padding: 0 15px;
   border: 0;
-  border-radius: 99px;
+  border-right: 1px solid var(--rule-2);
+  border-radius: 0;
   background: transparent;
-  color: var(--text-3);
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: -.01em;
+  color: var(--fg-3);
+  font-stretch: 92%;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  transition: background .18s var(--ease), color .18s var(--ease);
+  transition: background .14s var(--ease), color .14s var(--ease);
 }
-.seg button:hover { color: var(--text-2); }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { color: var(--fg-2); background: var(--stock-2); }
 .seg button[aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 700;
-  box-shadow: var(--accent-glow);
+  background: var(--uv-pale);
+  color: var(--uv-ink);
 }
+
+/* --------------------------------------------------------- trades ------- */
+
+.trade-list { border-top: 1px solid var(--rule); }
+
+.trade {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The one offer that needs an answer from you steps forward. */
+.trade.awaits-you {
+  padding: 18px;
+  margin: 0 -18px;
+  border-bottom-color: transparent;
+  background: var(--uv-block);
+  box-shadow: inset 0 0 0 1px var(--uv-line);
+}
+.trade.awaits-you .muted, .trade.awaits-you .eyebrow { color: #B79BC6; }
+.trade.awaits-you + .trade { border-top: 1px solid var(--rule); }
+
+.trade-sides {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+}
+.trade-swap { display: block; width: 18px; padding-top: 20px; }
+.trade-swap svg { width: 18px; height: 18px; }
 
 /* ---------------------------------------------------------- notices ------ */
 
 .notice {
   display: flex;
-  gap: 11px;
-  padding: 13px 15px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--text-2);
+  gap: var(--s-3);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule);
+  background: var(--stock-2);
+  color: var(--fg-2);
   font-size: 13.5px;
   line-height: 1.5;
 }
-.notice.error { border-color: var(--live-edge); background: var(--live-wash); color: #FFB5A6; }
-.notice.good  { border-color: rgba(74,222,128,.35); background: var(--up-wash); color: #B6F5CC; }
-.notice.warn  { border-color: rgba(232, 196, 104, .3); background: var(--gold-wash); color: #F0DCA8; }
+/* A notice is prose, so it takes a reading measure even when its column is
+   1120px wide. Past about 75 characters the eye starts losing the line. */
+.notice, .notice > * { max-width: 72ch; }
+.notice.error { border-color: #7A1234; background: var(--live-deep); color: #FFC2D1; }
+.notice.good  { border-color: #14603F; background: var(--up-deep);   color: #A6EFCC; }
+.notice.warn  { border-color: #6B5216; background: var(--gold-deep); color: #F2DCA4; }
 
 /* ------------------------------------------------------------- sheet ----- */
 
@@ -696,121 +969,112 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 5, 6, .7);
-  backdrop-filter: blur(6px);
+  background: rgba(4, 3, 6, .78);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fade .2s var(--ease);
+  animation: fade .18s var(--ease);
 }
 @media (min-width: 640px) { .scrim { align-items: center; } }
 
 .sheet {
   width: 100%;
-  max-width: 540px;
+  max-width: 520px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--stock-2);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r) var(--r) 0 0;
   padding-bottom: env(safe-area-inset-bottom);
-  animation: rise .3s var(--ease);
-  box-shadow: 0 -20px 60px -12px rgba(0, 0, 0, .7);
+  animation: rise .26s var(--ease);
+  box-shadow: var(--lift);
 }
 @media (min-width: 640px) {
-  .sheet {
-    border-radius: var(--radius-lg);
-    animation: pop .24s var(--ease);
-    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .8);
-  }
+  .sheet { border-radius: var(--r); animation: fade .18s var(--ease); }
 }
 
 .sheet-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--line);
+  gap: var(--s-3);
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--rule);
 }
-.sheet-body { padding: 18px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet-body { padding: var(--s-5) 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .sheet-foot {
   padding: 14px 20px 20px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--rule);
   display: flex;
-  gap: 10px;
+  gap: var(--s-2);
 }
 .sheet-foot .btn { flex: 1; }
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes pop  { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-/* ------------------------------------------------------------ skeleton --- */
+/* ------------------------------------------------------------ skeleton ---
+   A flat block that breathes. The travelling highlight sweep is decoration
+   pretending to be progress. */
 
 .skel {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-3) 50%, var(--surface) 75%);
-  background-size: 300% 100%;
-  animation: shimmer 1.5s linear infinite;
-  border-radius: var(--radius-sm);
+  background: var(--stock-2);
+  border-radius: var(--r-sm);
+  animation: breathe 1.6s var(--ease) infinite alternate;
 }
-@keyframes shimmer { to { background-position: -300% 0; } }
+@keyframes breathe { from { opacity: .5; } to { opacity: 1; } }
 
 /* --------------------------------------------------------------- misc ---- */
 
-.divider { height: 1px; background: var(--line); }
-.divider.strong { background: var(--line-bright); }
+.divider { height: 1px; background: var(--rule); }
+.divider.strong { background: var(--rule-2); }
 
 .empty {
-  padding: 48px 20px;
+  padding: 40px 20px;
   text-align: center;
-  color: var(--text-3);
-  font-size: 14px;
+  color: var(--fg-3);
+  font-size: 13.5px;
 }
 
 .toast-stack {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--tabbar) + 16px);
+  bottom: calc(var(--tabbar) + var(--s-4));
   z-index: 70;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-2);
   width: calc(100% - 32px);
-  max-width: 440px;
+  max-width: 420px;
   pointer-events: none;
 }
-@media (min-width: 880px) { .toast-stack { bottom: 26px; } }
+@media (min-width: 880px) { .toast-stack { bottom: var(--s-5); } }
 
 .toast {
   pointer-events: auto;
-  padding: 13px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-3);
-  border: 1px solid var(--line-bright);
-  color: var(--text);
+  padding: 12px 15px;
+  border-radius: var(--r-sm);
+  background: var(--stock-3);
+  border: 1px solid var(--rule-2);
+  color: var(--fg);
   font-size: 13.5px;
   font-weight: 500;
   line-height: 1.45;
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .8);
-  animation: rise .26s var(--ease);
+  box-shadow: var(--lift);
+  animation: rise .22s var(--ease);
 }
-.toast.error { background: #2A1512; border-color: var(--live-edge); color: #FFB5A6; }
-.toast.good  { background: #16241A; border-color: rgba(74,222,128,.4); color: #B6F5CC; }
+.toast.error { background: var(--live-deep); border-color: #7A1234; color: #FFC2D1; }
+.toast.good  { background: var(--up-deep);   border-color: #14603F; color: #A6EFCC; }
 
-/* A single quiet entrance for the page, rather than a per-block stagger.
-   Staggering direct children meant animating sticky elements too, which broke
-   their stacking and let scrolling content paint straight through them. */
-/* Opacity only — no transform. `.page` wraps everything including modals, and
-   even an identity transform makes an element the containing block for its
-   fixed-position descendants, which pins a full-screen overlay to the page box
-   instead of the viewport. */
+/* One quiet entrance for the page, opacity only.
+   `.page` wraps everything including modals, and even an identity transform
+   makes an element the containing block for its fixed-position descendants,
+   which pins a full-screen overlay to the page box instead of the viewport. */
 @media (prefers-reduced-motion: no-preference) {
-  .page { animation: enter .4s var(--ease) both; }
+  .page { animation: fade .3s var(--ease) both; }
 }
-@keyframes enter { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -829,15 +1093,13 @@ button.list-row:hover:not(:disabled), a.list-row:hover { background: var(--surfa
 
 .sticky-head {
   position: sticky;
-  top: calc(var(--head-h) + 10px);
+  top: calc(var(--head-h) + 8px);
   z-index: 30;
-  background: var(--surface);
-  box-shadow: 0 14px 30px -16px rgba(0, 0, 0, .95);
 }
 
 /* On desktop each pane scrolls inside itself, so the page barely moves and
    there is nothing for the clock to stick to — pinning it there only let it
    cover the column beside it. */
 @media (min-width: 940px) {
-  .sticky-head { position: static; top: auto; box-shadow: none; }
+  .sticky-head { position: static; top: auto; }
 }

@@ -105,11 +105,30 @@ Two consequences worth knowing, both falling out of the fixed 16-man squad:
 
 ## Design
 
-*Broadsheet Pitch* — a football weekly set in ink on newsprint. Instrument Serif
-for headlines, IBM Plex Sans for reading, IBM Plex Mono so every column of
-figures lines up. Vermilion is reserved: it only ever means live or irreversible.
+A football weekly printed in ultraviolet ink on black newsprint. The whole
+system is `src/styles/global.css`, and it holds to three rules:
 
-Desktop gets a tab strip under the masthead and two-column draft board; phones
+**Structure is hairlines and flat blocks, never glow.** There is not one radial
+wash, coloured halo or gradient anywhere in the app. A dark UI lit from behind
+by a purple bloom is the most tired look in software; this one is *printed*,
+which is what a results page should be. Depth exists only under overlays, and
+it is a real shadow — offset plus blur, neutral.
+
+**One typeface, two widths.** Archivo, self-hosted as a variable font. Display
+runs the width axis down to ~78% and sets in heavy caps — a back-page headline;
+reading sizes stay at normal width. The width axis does the work a second
+display face would, without the second request. Figures are tabular and lining
+throughout, so every column of points lines up like a printed league table.
+
+**Colour is a role.** Ultraviolet is the app talking to you — the primary
+action, the current selection, the block behind the pick clock. Crimson means
+live or irreversible and nothing else. Green means available, gold means top of
+the table. Positions are deliberately *not* colour-coded: the letters already
+say GK from MID, and four hues on every row of a 500-name draft board was the
+noisiest thing on the screen. Purple appears loud as a block of colour and
+quiet as a word — vivid violet *type* on black is the note that reads cheap.
+
+Desktop gets a tab strip under the masthead and a two-column draft board; phones
 get a thumb-reachable bottom bar, bottom sheets instead of dialogs, and 16px
 inputs so iOS doesn't zoom. Lineups are edited by tapping two players to swap
 them, which means the XI can never enter an invalid state.

@@ -3,7 +3,7 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconLock, Loading, Notice, PosChip, Segmented, Sheet } from '../components/ui'
+import { Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, Segmented, Sheet } from '../components/ui'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position } from '../lib/types'
 
@@ -76,10 +76,9 @@ export default function Players () {
 
   return (
     <div className="page narrow">
-      <div className="mt-32">
-        <div className="eyebrow">Free agency · first come, first served</div>
-        <h1 className="h1 mt-8">Players</h1>
-      </div>
+      <PageHead
+        title="Players"
+        meta="Free agency is first come, first served. Sign a player and you drop one in the same position." />
 
       {!open && (
         <div className="mt-16">
@@ -87,7 +86,7 @@ export default function Players () {
         </div>
       )}
 
-      <div className="mt-24 stack gap-12">
+      <div className="stack gap-12">
         <input className="input" value={query} onChange={e => setQuery(e.target.value)}
           placeholder="Search player or club" type="search" />
         <div className="row gap-8 wrap">

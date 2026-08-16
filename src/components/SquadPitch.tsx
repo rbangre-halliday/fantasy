@@ -14,7 +14,9 @@ export interface PitchPlayer {
  * need?" at a glance, which a row of counters never quite does.
  *
  * Markings are hairline SVG on the same black as everything else — a pitch by
- * suggestion, not a green rectangle.
+ * suggestion, not a green rectangle. A filled slot is a flat block of
+ * ultraviolet: no glow, no gradient, no scale-in. The shape is the
+ * information, and the shape is legible without any of that.
  */
 export default function SquadPitch ({
   players, capacity = SQUAD_CAPS, compact = false
@@ -30,17 +32,31 @@ export default function SquadPitch ({
   const total = players.length
   const cap = POSITIONS.reduce((n, p) => n + capacity[p], 0)
 
+  // The viewBox is derived from the box's own aspect ratio rather than fixed at
+  // 300×400, so the markings can be drawn 1:1 with no scaling. Cropping them to
+  // fit — which is what the old fixed box did — sliced the penalty areas in half
+  // and pushed the centre circle off the halfway line.
+  const ratio = cap > 11 ? 0.86 : 0.76
+  const W = 300
+  const H = Math.round(W / ratio)
+  const boxW = 150
+  const boxH = Math.round(H * 0.15)
+  const sixW = 70
+  const sixH = Math.round(H * 0.06)
+
   return (
     <div className="pitch" aria-label={`Squad: ${total} of ${cap} players`}>
-      <svg className="pitch-lines" viewBox="0 0 300 400"
-        preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect x="6" y="6" width="288" height="388" rx="6" />
-        <line x1="6" y1="200" x2="294" y2="200" />
-        <circle cx="150" cy="200" r="42" />
-        <rect x="82" y="6" width="136" height="52" />
-        <rect x="82" y="342" width="136" height="52" />
-        <rect x="118" y="6" width="64" height="22" />
-        <rect x="118" y="372" width="64" height="22" />
+      {/* non-scaling-stroke keeps the markings a true hairline: min-height can
+          push the box off its aspect ratio, and a scaled stroke would then be
+          a different weight horizontally than vertically. */}
+      <svg className="pitch-lines" viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none" vectorEffect="non-scaling-stroke" aria-hidden="true">
+        <line x1="0" y1={H / 2} x2={W} y2={H / 2} />
+        <circle cx={W / 2} cy={H / 2} r={W * 0.16} />
+        <rect x={(W - boxW) / 2} y="0" width={boxW} height={boxH} />
+        <rect x={(W - boxW) / 2} y={H - boxH} width={boxW} height={boxH} />
+        <rect x={(W - sixW) / 2} y="0" width={sixW} height={sixH} />
+        <rect x={(W - sixW) / 2} y={H - sixH} width={sixW} height={sixH} />
       </svg>
 
       <div className="pitch-rows">
@@ -70,13 +86,11 @@ export default function SquadPitch ({
           position: relative;
           /* A real pitch is taller than it is wide; holding the ratio is what
              stops the centre circle stretching into an ellipse. */
-          aspect-ratio: ${cap > 11 ? '0.86' : '0.76'};
+          aspect-ratio: ${ratio};
           min-height: ${cap > 11 ? '330px' : '300px'};
-          border: 1px solid var(--line);
-          border-radius: var(--radius);
-          background:
-            radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.04), transparent 70%),
-            var(--bg-2);
+          border: 1px solid var(--rule);
+          border-radius: var(--r);
+          background: var(--stock-1);
           padding: ${compact ? '14px 10px' : '18px 14px'};
           overflow: hidden;
         }
@@ -86,9 +100,9 @@ export default function SquadPitch ({
           width: 100%;
           height: 100%;
           fill: none;
-          stroke: var(--line);
+          stroke: var(--rule);
           stroke-width: 1;
-          opacity: .9;
+          vector-effect: non-scaling-stroke;
           pointer-events: none;
         }
         .pitch-rows {
@@ -107,54 +121,49 @@ export default function SquadPitch ({
         }
         .slot {
           flex: 0 1 auto;
-          min-width: ${compact ? '54px' : '62px'};
+          min-width: ${compact ? '60px' : '68px'};
           max-width: 96px;
           height: ${compact ? '38px' : '44px'};
-          padding: 0 8px;
+          padding: 0 7px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 1px;
-          border-radius: 8px;
-          border: 1px dashed var(--line);
-          background: rgba(255,255,255,.012);
-          transition: border-color .25s var(--ease), background .25s var(--ease);
+          border-radius: var(--r-sm);
+          border: 1px dashed var(--rule-2);
+          background: transparent;
+          transition: border-color .2s var(--ease), background .2s var(--ease);
         }
         .slot.filled {
           border-style: solid;
-          border-color: var(--accent-edge);
-          background: linear-gradient(180deg, var(--accent-wash), transparent), var(--surface-2);
-          box-shadow: 0 4px 18px -8px rgba(124, 92, 255, .7);
-          animation: slotIn .32s var(--ease) both;
+          border-color: var(--uv-line);
+          background: var(--uv-block);
         }
         .slot-name {
-          font-size: ${compact ? '10.5px' : '11.5px'};
-          font-weight: 600;
-          letter-spacing: -.015em;
+          font-size: ${compact ? '11px' : '12px'};
+          font-weight: 650;
+          letter-spacing: -.012em;
           max-width: 100%;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          color: var(--text);
+          color: var(--fg);
         }
+        /* Tinted from the block it sits on, never grey — grey on a coloured
+           surface always reads as a mistake. */
         .slot-club {
-          font-family: var(--font-mono);
-          font-size: 8.5px;
-          letter-spacing: .04em;
-          color: var(--text-3);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: .09em;
+          text-transform: uppercase;
+          color: #B79BC6;
         }
         .slot-pos {
-          font-family: var(--font-mono);
-          font-size: 9px;
-          font-weight: 600;
-          letter-spacing: .08em;
-          color: var(--text-3);
-          opacity: .42;
-        }
-        @keyframes slotIn {
-          from { opacity: 0; transform: scale(.9); }
-          to   { opacity: 1; transform: none; }
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: .1em;
+          color: var(--fg-3);
         }
       `}</style>
     </div>

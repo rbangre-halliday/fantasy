@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useToast } from '../lib/toast'
 import type { Draft, Gameweek, League, Member, Trade } from '../lib/types'
-import { IconDraft, IconPlayers, IconTable, IconTeam, IconTrade, Loading } from './ui'
+import { IconChevron, IconDraft, IconPlayers, IconTable, IconTeam, IconTrade, Loading } from './ui'
 
 interface LeagueCtx {
   league: League
@@ -133,24 +133,23 @@ export default function LeagueLayout () {
     <Ctx.Provider value={value}>
       <header className="masthead">
         <div className="masthead-inner">
-          {/* The wordmark is inline-flex, so this has to be a column or it
-              lands on the same line as the back link. */}
-          <div className="grow stack" style={{ minWidth: 0, alignItems: 'flex-start' }}>
-            <NavLink to="/" className="eyebrow">← All leagues</NavLink>
-            <div className="wordmark truncate" style={{ marginTop: 2, maxWidth: '100%' }}>
+          <div className="grow row gap-12" style={{ minWidth: 0 }}>
+            <NavLink to="/" className="back-link" aria-label="All leagues">
+              <IconChevron dir="left" size={17} />
+            </NavLink>
+            <div className="wordmark truncate" style={{ maxWidth: '100%' }}>
               {league.name}
             </div>
-          </div>
-          <div className="stack gap-4" style={{ alignItems: 'flex-end', flexShrink: 0 }}>
             <LeagueBadge status={league.status} />
-            {/* Which account you're on decides whether you see commissioner
-                controls, so it shouldn't be a mystery. */}
-            <button className="btn quiet tiny" style={{ minHeight: 0, padding: 0 }}
-              title={`Signed in as ${name}`}
-              onClick={() => { if (confirm(`Sign out of ${name}?`)) void signOut() }}>
-              {name} · sign out
-            </button>
           </div>
+          {/* Which account you're on decides whether you see commissioner
+              controls, so it shouldn't be a mystery — but on a phone the
+              league's own name has the better claim on the space. */}
+          <button className="btn quiet account"
+            title={`Signed in as ${name}`}
+            onClick={() => { if (confirm(`Sign out of ${name}?`)) void signOut() }}>
+            {name}<span className="account-verb"> · sign out</span>
+          </button>
         </div>
 
         <nav className="tabs-desktop">
@@ -158,7 +157,7 @@ export default function LeagueLayout () {
             <NavLink key={t.to} to={t.to} end={'end' in t ? t.end : false}
               className={({ isActive }) => isActive ? 'active' : ''}>
               {t.label}
-              {'badge' in t && t.badge ? <span className="num" style={{ color: 'var(--red)' }}> ·{t.badge}</span> : null}
+              {'badge' in t && t.badge ? <span className="tab-badge">{t.badge}</span> : null}
             </NavLink>
           ))}
           <div className="grow" />
@@ -191,5 +190,5 @@ function LeagueBadge ({ status }: { status: League['status'] }) {
   const map: Record<string, string> = {
     lobby: 'Lobby', active: 'In season', completed: 'Finished'
   }
-  return <span className="eyebrow">{map[status]}</span>
+  return <span className="status-tag">{map[status]}</span>
 }

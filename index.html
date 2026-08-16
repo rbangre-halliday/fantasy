@@ -3,16 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0A0A0B" />
+    <meta name="theme-color" content="#08070A" />
     <meta name="description" content="A private Fantasy Premier League draft for you and five friends." />
     <title>The Draft — Fantasy Premier League</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      Archivo is self-hosted rather than pulled from Google Fonts: the width
+      axis is the whole typographic idea here, and a third-party stylesheet
+      that render-blocks — and can be slow, blocked or subset differently —
+      is not something to hang the design's voice on. Two files, same origin,
+      preloaded, no DNS round trip before the first paint.
+    -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+
+    <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <div id="root"></div>

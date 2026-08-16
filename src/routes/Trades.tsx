@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Loading, Notice, PosChip, Sheet } from '../components/ui'
+import { Eyebrow, IconTrade, Loading, Notice, PageHead, PosChip, Sheet } from '../components/ui'
 import { relativeTime } from '../lib/format'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position, Trade, TradePlayerRow } from '../lib/types'
@@ -48,14 +48,13 @@ export default function Trades () {
 
   return (
     <div className="page narrow">
-      <div className="mt-32">
-        <div className="eyebrow">No vetoes, no committee</div>
-        <h1 className="h1 mt-8">Trades</h1>
-      </div>
+      <PageHead
+        title="Trades"
+        meta="Up to three each way, positions matched. No vetoes, no committee." />
 
       {!open && <div className="mt-16"><Notice kind="warn">Trading opens once the draft is complete.</Notice></div>}
 
-      <div className="mt-24">
+      <div>
         <Eyebrow>Propose a trade</Eyebrow>
         <div className="row gap-8 wrap">
           {members.filter(m => m.id !== me.id).map(m => (
@@ -70,7 +69,7 @@ export default function Trades () {
       <div className="mt-40">
         <Eyebrow>Open offers</Eyebrow>
         {pending.length === 0 ? <div className="empty">Nothing on the table.</div> : (
-          <ul className="stack gap-12">
+          <ul className="trade-list">
             {pending.map(t => (
               <TradeCard key={t.id} trade={t} rows={tradePlayers.filter(r => r.trade_id === t.id)}
                 byId={byId} teamName={teamName} meId={me.id}
@@ -101,7 +100,7 @@ export default function Trades () {
       {history.length > 0 && (
         <div className="mt-40">
           <Eyebrow>Settled</Eyebrow>
-          <ul className="stack gap-12">
+          <ul className="trade-list">
             {history.slice(0, 15).map(t => (
               <TradeCard key={t.id} trade={t} rows={tradePlayers.filter(r => r.trade_id === t.id)}
                 byId={byId} teamName={teamName} meId={me.id} />
@@ -137,8 +136,13 @@ function TradeCard ({
     pending: 'Pending', accepted: 'Accepted', rejected: 'Rejected', cancelled: 'Withdrawn'
   }
 
+  // Only an offer waiting on *you* gets the block of colour. Everything else
+  // is a ruled entry in a ledger — four identical bordered cards in a column
+  // would give a settled trade from last week the same weight as a live one.
+  const awaitingMe = trade.status === 'pending' && trade.receiver_id === meId
+
   return (
-    <li className="card card-pad">
+    <li className={`trade${awaitingMe ? ' awaits-you' : ''}`}>
       <div className="between">
         <span className="eyebrow">
           {trade.proposer_id === meId ? 'You' : teamName.get(trade.proposer_id)}
@@ -148,11 +152,9 @@ function TradeCard ({
         <span className="tiny muted">{label[trade.status]} · {relativeTime(trade.created_at)}</span>
       </div>
 
-      <div className="mt-16" style={{
-        display: 'grid', gap: 14, gridTemplateColumns: '1fr auto 1fr', alignItems: 'start'
-      }}>
+      <div className="mt-16 trade-sides">
         <Side rows={out} byId={byId} heading="Gives" />
-        <span aria-hidden className="muted" style={{ fontSize: 18, paddingTop: 18 }}>⇄</span>
+        <span className="trade-swap muted" aria-hidden><IconTrade /></span>
         <Side rows={back} byId={byId} heading="Gets" />
       </div>
 

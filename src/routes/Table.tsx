@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Loading, Notice } from '../components/ui'
+import { Eyebrow, Loading, Notice, PageHead } from '../components/ui'
 import { relativeTime } from '../lib/format'
 import type { LeaguePlayer, Standing, Txn } from '../lib/types'
 
@@ -51,16 +51,13 @@ export default function Table () {
 
   return (
     <div className="page narrow">
-      <div className="mt-32">
-        <div className="eyebrow">
-          Scoring from GW {league.scoring_start_gw} · Official FPL points
-        </div>
-        <h1 className="h1 mt-8">Table</h1>
-      </div>
+      <PageHead
+        title="Table"
+        meta={`Official FPL points, counted from gameweek ${league.scoring_start_gw}.`} />
 
       {rows === null ? <Loading rows={6} /> : (
         <>
-          <div className="mt-24">
+          <div>
             <div className="thead">
               <span style={{ width: 26 }}>#</span>
               <span className="grow">Team</span>
@@ -75,10 +72,11 @@ export default function Table () {
                     to={r.member_id === me.id
                       ? `/l/${league.id}/team`
                       : `/l/${league.id}/team/${r.member_id}`}>
-                    <span className="num" style={{
-                      width: 26, fontSize: 15,
-                      color: r.rank === 1 ? 'var(--gold)' : 'var(--ink-3)',
-                      fontWeight: r.rank === 1 ? 600 : 400
+                    {/* Position and total are the two numbers anyone reads a
+                        table for, so they are the two that get set large. */}
+                    <span className="figure" style={{
+                      width: 26, fontSize: 21,
+                      color: r.rank === 1 ? 'var(--gold)' : 'var(--fg-3)'
                     }}>{r.rank}</span>
                     <span className="grow" style={{ minWidth: 0 }}>
                       <span className="name truncate" style={{ display: 'block' }}>
@@ -89,7 +87,7 @@ export default function Table () {
                     <span className="num small muted" style={{ width: 46, textAlign: 'right' }}>
                       {r.gw_points}
                     </span>
-                    <span className="num" style={{ width: 58, textAlign: 'right', fontWeight: 600, fontSize: 16 }}>
+                    <span className="figure" style={{ width: 62, textAlign: 'right', fontSize: 21 }}>
                       {r.total_points}
                     </span>
                   </Link>
@@ -105,11 +103,10 @@ export default function Table () {
           )}
 
           {league.status === 'completed' && ranked[0] && (
-            <div className="slab green mt-24">
-              <div className="eyebrow">Champion</div>
-              <h2 className="h2 mt-8">{ranked[0].team_name}</h2>
+            <div className="slab green mt-32">
+              <h2 className="h2">{ranked[0].team_name}</h2>
               <p className="small muted mt-8">
-                {ranked[0].manager_name} · {ranked[0].total_points} points
+                Champion · {ranked[0].manager_name} · {ranked[0].total_points} points
               </p>
             </div>
           )}
