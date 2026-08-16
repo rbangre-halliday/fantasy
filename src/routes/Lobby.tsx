@@ -52,7 +52,7 @@ export default function Lobby () {
         <div className="eyebrow">Invite code</div>
         <div className="num" style={{
           fontSize: 'clamp(38px, 11vw, 58px)', letterSpacing: '.14em',
-          color: 'var(--green)', lineHeight: 1.1, marginTop: 4
+          color: 'var(--text)', lineHeight: 1.1, marginTop: 8
         }}>
           {league.invite_code}
         </div>

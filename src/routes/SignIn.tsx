@@ -37,8 +37,7 @@ export default function SignIn () {
           options: { data: { name: name.trim() || email.split('@')[0] } }
         })
         if (error) throw error
-        // With email confirmation on, there's no session yet.
-        if (!data.session) setSent(true)
+        if (!data.session) setSent(true)   // email confirmation is switched on
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(), password
@@ -53,120 +52,175 @@ export default function SignIn () {
   }
 
   return (
-    <div className="page" style={{ paddingBottom: 48 }}>
-      <div style={{ maxWidth: 1020, margin: '0 auto' }}>
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Masthead — the one place the type gets to be loud. */}
-        <div style={{ paddingTop: 'max(40px, env(safe-area-inset-top))' }}>
-          <div className="eyebrow">Est. this season · Six managers · One squad each</div>
-          <h1 className="h1 mt-8" style={{ fontSize: 'clamp(46px, 12vw, 116px)', lineHeight: .88 }}>
-            The&nbsp;Draft
-          </h1>
-          <div className="divider strong mt-16" />
-          <p className="mt-16" style={{ maxWidth: 560, fontSize: 17, lineHeight: 1.5 }}>
-            Fantasy Premier League the way it should be with friends: a live snake draft,
-            and <em style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20 }}>one owner per player</em>.
-            If someone takes Salah, nobody else gets Salah. Official FPL points, all season.
-          </p>
-        </div>
-
-        <div className="mt-32" style={{
-          display: 'grid', gap: 28,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          alignItems: 'start'
+      {/* --- rail ---------------------------------------------------------- */}
+      <header style={{
+        borderBottom: '1px solid var(--line)',
+        paddingTop: 'env(safe-area-inset-top)'
+      }}>
+        <div style={{
+          maxWidth: 1240, margin: '0 auto', padding: '18px var(--gut)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
-          {/* form */}
-          <div className="slab green" style={{ order: 0 }}>
-            <div className="row gap-16" style={{ marginBottom: 14 }}>
-              <button className={`btn quiet ${mode === 'in' ? '' : 'muted'}`}
-                style={{ textDecorationColor: mode === 'in' ? 'var(--green)' : 'transparent',
-                         color: mode === 'in' ? 'var(--ink)' : 'var(--ink-3)' }}
-                onClick={() => { setMode('in'); setError(null); setSent(false) }}>
-                Sign in
-              </button>
-              <button className="btn quiet"
-                style={{ textDecorationColor: mode === 'up' ? 'var(--green)' : 'transparent',
-                         color: mode === 'up' ? 'var(--ink)' : 'var(--ink-3)' }}
-                onClick={() => { setMode('up'); setError(null); setSent(false) }}>
-                Create account
-              </button>
-            </div>
-
-            {sent ? (
-              <Notice kind="good">
-                Check your inbox for a confirmation link, then come back and sign in.
-              </Notice>
-            ) : (
-              <form onSubmit={submit} className="stack gap-12">
-                {mode === 'up' && (
-                  <label className="field">
-                    <span className="label">Your name</span>
-                    <input className="input" value={name} onChange={e => setName(e.target.value)}
-                      autoComplete="name" placeholder="Rahul" />
-                  </label>
-                )}
-                <label className="field">
-                  <span className="label">Email</span>
-                  <input className="input" type="email" required value={email}
-                    onChange={e => setEmail(e.target.value)} autoComplete="email"
-                    placeholder="you@example.com" />
-                </label>
-                <label className="field">
-                  <span className="label">Password</span>
-                  <input className="input" type="password" required minLength={6} value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    autoComplete={mode === 'up' ? 'new-password' : 'current-password'}
-                    placeholder="At least 6 characters" />
-                </label>
-
-                {error && <Notice kind="error">{error}</Notice>}
-
-                <button className="btn lg block mt-8" disabled={busy}>
-                  {busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}
-                </button>
-              </form>
-            )}
-
-            {invite && (
-              <p className="small muted mt-16">
-                You’ll join league <span className="num">{invite.toUpperCase()}</span> as soon as you’re in.
-              </p>
-            )}
-          </div>
-
-          {/* the rules, stated plainly */}
-          <div>
-            <Rule n="01" head="Draft, don’t duplicate">
-              Two to six managers, a randomised snake order, two minutes a pick.
-              Every EPL player belongs to exactly one squad.
-            </Rule>
-            <Rule n="02" head="Sixteen players, one shape">
-              2 GK, 5 DEF, 5 MID, 4 FWD. You start eleven in a fixed 4-4-2.
-              No captains, no budget, no chips.
-            </Rule>
-            <Rule n="03" head="Real points, automatically">
-              Scores come straight from official FPL. Players lock at their own kickoff,
-              and missing starters are subbed off the bench for you.
-            </Rule>
-            <Rule n="04" head="Free agents and trades">
-              Unowned players are first come, first served. Trade up to three-for-three
-              with anyone, no vetoes, no committee.
-            </Rule>
-          </div>
+          <div className="wordmark">The&nbsp;<i>Draft</i></div>
+          <span className="eyebrow">Fantasy Premier League</span>
         </div>
-      </div>
-    </div>
-  )
-}
+      </header>
 
-function Rule ({ n, head, children }: { n: string; head: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 16, padding: '16px 0', borderTop: '1px solid var(--rule)' }}>
-      <span className="num" style={{ color: 'var(--rule-strong)', fontSize: 13, paddingTop: 3 }}>{n}</span>
-      <div>
-        <h3 className="h3">{head}</h3>
-        <p className="small muted mt-8" style={{ lineHeight: 1.5 }}>{children}</p>
-      </div>
+      {/* --- hero ---------------------------------------------------------- */}
+      <main style={{ flex: 1 }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 var(--gut)' }}>
+          <div className="crosshair" style={{ padding: 'clamp(48px, 9vw, 104px) 0' }}>
+            {/* the four corner ticks */}
+            <span className="mark" style={{ top: -4, left: -4 }} />
+            <span className="mark" style={{ top: -4, right: -4 }} />
+            <span className="mark" style={{ bottom: -4, left: -4 }} />
+            <span className="mark" style={{ bottom: -4, right: -4 }} />
+
+            <div style={{
+              display: 'grid', gap: 'clamp(40px, 6vw, 80px)',
+              gridTemplateColumns: 'minmax(0, 1fr)', alignItems: 'start'
+            }} className="hero-grid">
+
+              <div>
+                <span className="eyebrow">Private leagues · 2–6 managers</span>
+                <h1 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 200,
+                  fontSize: 'clamp(42px, 7.4vw, 92px)',
+                  lineHeight: .98,
+                  letterSpacing: '-.042em',
+                  margin: '22px 0 0'
+                }}>
+                  A live snake draft
+                  <br />
+                  <span style={{ color: 'var(--text-3)' }}>for you and five friends.</span>
+                </h1>
+
+                <p className="mt-24" style={{
+                  maxWidth: 480, fontSize: 16, lineHeight: 1.6, color: 'var(--text-2)'
+                }}>
+                  Every Premier League player belongs to exactly one squad. Draft him and
+                  nobody else can have him. Official FPL points, all season, counted for you.
+                </p>
+
+                <dl className="mt-40" style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(112px, 1fr))',
+                  gap: 1, background: 'var(--line)', border: '1px solid var(--line)', margin: 0
+                }}>
+                  {[
+                    ['16', 'players a squad'],
+                    ['4-4-2', 'every week'],
+                    ['2 min', 'a pick'],
+                    ['1', 'owner per player']
+                  ].map(([big, small]) => (
+                    <div key={small} style={{ background: 'var(--bg)', padding: '16px 14px' }}>
+                      <dt className="num" style={{
+                        fontSize: 21, fontWeight: 500, letterSpacing: '-.04em'
+                      }}>{big}</dt>
+                      <dd className="tiny muted" style={{ margin: '5px 0 0', lineHeight: 1.35 }}>
+                        {small}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+
+              {/* --- form ---------------------------------------------------- */}
+              <div className="card card-pad" style={{ background: 'var(--surface)' }}>
+                <div className="row gap-24" style={{ marginBottom: 20 }}>
+                  {(['in', 'up'] as const).map(m => (
+                    <button key={m}
+                      onClick={() => { setMode(m); setError(null); setSent(false) }}
+                      className="eyebrow"
+                      style={{
+                        background: 'none', border: 0, padding: '0 0 8px', cursor: 'pointer',
+                        color: mode === m ? 'var(--text)' : 'var(--text-3)',
+                        borderBottom: `1px solid ${mode === m ? 'var(--text)' : 'transparent'}`,
+                        transition: 'color .18s, border-color .18s'
+                      }}>
+                      {m === 'in' ? 'Sign in' : 'Create account'}
+                    </button>
+                  ))}
+                </div>
+
+                {sent ? (
+                  <Notice kind="good">
+                    Check your inbox for a confirmation link, then come back and sign in.
+                  </Notice>
+                ) : (
+                  <form onSubmit={submit} className="stack gap-14" style={{ gap: 14 }}>
+                    {mode === 'up' && (
+                      <label className="field">
+                        <span className="label">Your name</span>
+                        <input className="input" value={name} onChange={e => setName(e.target.value)}
+                          autoComplete="name" placeholder="Rahul" />
+                      </label>
+                    )}
+                    <label className="field">
+                      <span className="label">Email</span>
+                      <input className="input" type="email" required value={email}
+                        onChange={e => setEmail(e.target.value)} autoComplete="email"
+                        placeholder="you@example.com" />
+                    </label>
+                    <label className="field">
+                      <span className="label">Password</span>
+                      <input className="input" type="password" required minLength={6} value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        autoComplete={mode === 'up' ? 'new-password' : 'current-password'}
+                        placeholder="At least 6 characters" />
+                    </label>
+
+                    {error && <Notice kind="error">{error}</Notice>}
+
+                    <button className="btn lg block" style={{ marginTop: 6 }} disabled={busy}>
+                      {busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}
+                    </button>
+                  </form>
+                )}
+
+                {invite && (
+                  <p className="small muted mt-16">
+                    You’ll join league <span className="num" style={{ color: 'var(--text)' }}>
+                      {invite.toUpperCase()}
+                    </span> as soon as you’re in.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* --- the rules ---------------------------------------------------- */}
+          <section style={{ padding: 'clamp(44px, 7vw, 88px) 0' }}>
+            <span className="eyebrow">How it works</span>
+            <div className="mt-24" style={{
+              display: 'grid', gap: 1, background: 'var(--line)',
+              border: '1px solid var(--line)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))'
+            }}>
+              {[
+                ['01', 'Draft', 'Randomised snake order, two minutes a pick. Miss the clock and the best available player is taken for you.'],
+                ['02', 'Own', 'Sixteen players: 2 GK, 5 DEF, 5 MID, 4 FWD. No budget, no captains, no chips.'],
+                ['03', 'Score', 'Points come straight from official FPL. Players lock at their own kickoff and the bench subs in automatically.'],
+                ['04', 'Deal', 'Free agents are first come, first served. Trade up to three-for-three, no vetoes.']
+              ].map(([n, head, body]) => (
+                <div key={n} style={{ background: 'var(--bg)', padding: '26px 22px' }}>
+                  <span className="num tiny" style={{ color: 'var(--text-3)' }}>{n}</span>
+                  <h3 className="h3" style={{ marginTop: 12 }}>{head}</h3>
+                  <p className="small muted" style={{ marginTop: 8, lineHeight: 1.55 }}>{body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <style>{`
+        @media (min-width: 940px) {
+          .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr) !important; }
+        }
+      `}</style>
     </div>
   )
 }
