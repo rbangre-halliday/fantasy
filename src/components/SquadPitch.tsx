@@ -120,9 +120,11 @@ export default function SquadPitch ({
           gap: ${compact ? '5px' : '7px'};
         }
         .slot {
-          flex: 0 1 auto;
-          min-width: ${compact ? '60px' : '68px'};
-          max-width: 96px;
+          /* Shrink to share the row rather than pushing a sibling onto a new
+             line; names ellipsis and keep their title attribute. */
+          flex: 1 1 0;
+          min-width: 0;
+          max-width: 92px;
           height: ${compact ? '38px' : '44px'};
           padding: 0 7px;
           display: flex;

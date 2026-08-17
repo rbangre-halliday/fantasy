@@ -6,3 +6,6 @@ dist
 *.log
 .vercel
 .env*
+
+# scratch copies of the dev scripts, run from the repo root
+*.local.mjs

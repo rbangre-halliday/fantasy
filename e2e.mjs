@@ -45,10 +45,13 @@ await step('sign in', async () => {
 await step('my leagues lists each league once', async () => {
   await page.goto(`${base}/`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(1200)
-  const codes = await page.$$eval('.card .num', els => els.map(e => e.textContent.trim()))
-  const dupes = codes.filter((c, i) => codes.indexOf(c) !== i)
+  // Match the link target, not a styling class - the invite-code class has
+  // already moved once in a restyle and made this assertion vacuously pass.
+  const hrefs = await page.$$eval('a[href^="/l/"]', els => els.map(e => e.getAttribute('href')))
+  if (hrefs.length === 0) throw new Error('no leagues listed at all')
+  const dupes = hrefs.filter((c, i) => hrefs.indexOf(c) !== i)
   if (dupes.length) throw new Error(`duplicate leagues: ${dupes}`)
-  return `${codes.length} league(s)`
+  return `${hrefs.length} league(s), no duplicates`
 })
 
 // ----------------------------------------------------------------- draft ---
@@ -57,18 +60,20 @@ const draftUrl = `${base}/l/${leagueId}/draft`
 await step('draft room loads with a running clock', async () => {
   await page.goto(draftUrl, { waitUntil: 'networkidle' })
   await page.waitForTimeout(2000)
-  const t1 = await page.textContent('.slab .num')
+  const t1 = await page.textContent('[data-testid=draft-clock]')
   await page.waitForTimeout(1600)
-  const t2 = await page.textContent('.slab .num')
+  const t2 = await page.textContent('[data-testid=draft-clock]')
   if (t1 === t2) throw new Error(`clock not ticking (${t1})`)
   return `${t1} -> ${t2}`
 })
 
 await step('no element overlaps the clock', async () => {
   const r = await page.evaluate(() => {
+    // The next element after the clock, whatever it is called. Matching by
+    // class broke once the clock itself picked up a spacing class.
     const slab = document.querySelector('.slab')
-    const grid = slab.parentElement.querySelector('.mt-32')
-    const s = slab.getBoundingClientRect(), g = grid.getBoundingClientRect()
+    const next = slab.nextElementSibling
+    const s = slab.getBoundingClientRect(), g = next.getBoundingClientRect()
     return { slabBottom: Math.round(s.bottom), gridTop: Math.round(g.top) }
   })
   if (r.gridTop < r.slabBottom) throw new Error(`grid starts ${r.slabBottom - r.gridTop}px inside the clock`)
@@ -128,6 +133,12 @@ await step('starring again removes it', async () => {
 })
 
 // ------------------------------------------------------------- the modal ---
+await step('this user is on the clock (fixture precondition)', async () => {
+  const head = await page.textContent('.slab')
+  if (!/on the clock/i.test(head)) throw new Error('someone else is on the clock; pick controls are correctly disabled')
+  return 'yes'
+})
+
 await step('clicking a player opens the confirm sheet, on screen', async () => {
   await page.click('.pick-row .list-row')
   await page.waitForSelector('.sheet', { timeout: 4000 })
@@ -166,13 +177,13 @@ await step('sheet closes on backdrop click', async () => {
 // --------------------------------------------------------- making a pick ---
 await step('confirming a pick drafts the player', async () => {
   const name = (await page.textContent('.pick-row:first-child .name')).trim()
-  const before = await page.textContent('.slab .eyebrow')
+  const before = await page.textContent('[data-testid=draft-progress]')
   await page.click('.pick-row:first-child .list-row')
   await page.waitForSelector('.sheet')
   await page.click('.sheet-foot .btn:not(.ghost)')
   await page.waitForTimeout(2500)
   if (await page.$('.sheet')) throw new Error('sheet stayed open after drafting')
-  const after = await page.textContent('.slab .eyebrow')
+  const after = await page.textContent('[data-testid=draft-progress]')
   if (before === after) throw new Error(`pick number did not advance (${before})`)
   const onPitch = await page.$$eval('.slot.filled .slot-name', e => e.map(x => x.textContent.trim()))
   if (!onPitch.includes(name)) throw new Error(`${name} not on the pitch: ${onPitch.join(', ')}`)

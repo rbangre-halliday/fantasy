@@ -215,7 +215,7 @@ export default function DraftRoom () {
               <h1 className="h2 truncate">
                 {myTurn ? 'You’re on the clock' : onClockTeam ?? '—'}
               </h1>
-              <div className="small muted mt-8">
+              <div className="small muted mt-8" data-testid="draft-progress">
                 Round {draft.current_round} · pick {draft.current_pick} of {totalPicks}
                 {draft.status === 'paused'
                   ? ' · paused by the commissioner'
@@ -246,7 +246,10 @@ export default function DraftRoom () {
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div className="figure" style={{
+              {/* Test hook: the clock and the pick counter are the two things a
+                  UI run has to read, and both were being matched by class until
+                  a restyle moved those classes elsewhere. */}
+              <div className="figure" data-testid="draft-clock" style={{
                 fontSize: 'clamp(46px, 11vw, 68px)',
                 fontVariantNumeric: 'tabular-nums',
                 color: remaining !== null && remaining < 20000 && running
