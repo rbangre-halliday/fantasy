@@ -33,7 +33,7 @@ export default function MyLeagues () {
     <>
       <header className="masthead">
         <div className="masthead-inner">
-          <div className="wordmark">The&nbsp;<i>Draft</i></div>
+          <div className="wordmark">Gaffer</div>
           <button className="btn quiet" onClick={() => void signOut()}>Sign out</button>
         </div>
       </header>

@@ -75,8 +75,8 @@ export default function DraftRoom () {
   // title is the one channel that needs no permission and makes no noise.
   useEffect(() => {
     const mine = draft?.status === 'running' && draft.current_member_id === me.id
-    const base = 'The Draft — Fantasy Premier League'
-    document.title = mine ? '⏱ Your pick — The Draft' : base
+    const base = 'Gaffer — Fantasy Premier League'
+    document.title = mine ? '⏱ Your pick — Gaffer' : base
     return () => { document.title = base }
   }, [draft?.status, draft?.current_member_id, me.id])
 

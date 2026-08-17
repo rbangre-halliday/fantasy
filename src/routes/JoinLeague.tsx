@@ -28,7 +28,7 @@ export default function JoinLeague () {
       <header className="masthead">
         <div className="masthead-inner">
           <Link to="/" className="btn quiet">← All leagues</Link>
-          <div className="wordmark">The&nbsp;<i>Draft</i></div>
+          <div className="wordmark">Gaffer</div>
         </div>
       </header>
 

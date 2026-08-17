@@ -65,7 +65,7 @@ export default function SignIn () {
           maxWidth: 1240, margin: '0 auto', padding: '16px var(--gut)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
         }}>
-          <div className="wordmark">The&nbsp;<i>Draft</i></div>
+          <div className="wordmark">Gaffer</div>
           <span className="eyebrow">Fantasy Premier League</span>
         </div>
       </header>
@@ -73,7 +73,10 @@ export default function SignIn () {
       {/* --- hero ---------------------------------------------------------- */}
       <main style={{ flex: 1 }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 var(--gut)' }}>
-          <div style={{ padding: 'clamp(48px, 9vw, 104px) 0' }}>
+          {/* Asymmetric on purpose: generous above the headline, tighter below,
+              so the hero and the section under it don't stack two full paddings
+              into a gap with nothing in it. */}
+          <div style={{ padding: 'clamp(44px, 8vw, 92px) 0 clamp(28px, 4vw, 44px)' }}>
 
             <div style={{
               display: 'grid', gap: 'clamp(40px, 6vw, 80px)',
@@ -173,7 +176,7 @@ export default function SignIn () {
           {/* --- the rules ----------------------------------------------------
               Four verbs in order. The steps read chronologically on their own,
               so numbering them was decoration standing in for structure. */}
-          <section style={{ padding: 'clamp(48px, 7vw, 88px) 0' }}>
+          <section style={{ padding: 'clamp(32px, 4.5vw, 52px) 0 clamp(48px, 7vw, 88px)' }}>
             <h2 className="h2">How it works</h2>
             <div className="mt-32 rules">
               {[
