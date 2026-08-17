@@ -3,17 +3,19 @@ import { useNavigate, useParams } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, PosChip, Segmented } from '../components/ui'
+import { Crest, Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, Segmented } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
-import { POS_LABEL, availability, kickoffLabel, xiProblem } from '../lib/format'
-import { POSITIONS, XI_SHAPE } from '../lib/types'
-import type { Position, SquadPlayer } from '../lib/types'
+import { useCrests } from '../lib/images'
+import { availability, kickoffLabel, xiProblem } from '../lib/format'
+import { XI_SHAPE } from '../lib/types'
+import type { SquadPlayer } from '../lib/types'
 
 export default function Squad () {
   const { memberId } = useParams()
   const navigate = useNavigate()
   const { league, members, me, currentGw, nextGw } = useLeague()
   const { fail } = useToast()
+  const crests = useCrests()
 
   const viewing = members.find(m => m.id === memberId) ?? me
   const isMine = viewing.id === me.id
@@ -109,6 +111,8 @@ export default function Squad () {
     (pickedPlayer.lineup_status === 'starter') !== (p.lineup_status === 'starter') &&
     !p.locked
 
+  const crestOf = (p: SquadPlayer) => crests.shortCode.get(p.club_short ?? '')
+
   const gwOptions = [
     { value: String(currentGw), label: `GW ${currentGw}` },
     ...(nextGw !== currentGw ? [{ value: String(nextGw), label: `GW ${nextGw}` }] : [])
@@ -152,53 +156,50 @@ export default function Squad () {
             <div className="mt-16 stack gap-8">
               {problem
                 ? <Notice kind="warn">{problem} — your XI must be 1 GK, 4 DEF, 4 MID, 2 FWD.</Notice>
-                : <Notice>
-                    Tap a player, then tap someone in the same position to swap them.
-                    Everyone locks when their own match kicks off.
-                  </Notice>}
+                // The how-to lives under the pitch, where the tapping
+                // happens. This slot is for the rule you cannot see.
+                : <Notice>Each player locks when their own match kicks off.</Notice>}
               {saving && <div className="tiny muted">Saving…</div>}
             </div>
           )}
 
           <div className="mt-32 squad-grid">
-            {/* The XI as a shape. On desktop it stays put while the list
-                scrolls, so a swap always shows its effect on the formation. */}
+            {/* The XI is drawn once, and the drawing is the control. It used to
+                be here as a diagram *and* again as eleven rows underneath —
+                the same eleven names twice, with only the list clickable. Tap
+                a shirt, tap an eligible bench player, done. */}
             <aside className="squad-pitch-col">
-              <Eyebrow>Formation · 4-4-2</Eyebrow>
+              <Eyebrow>Starting XI · 4-4-2</Eyebrow>
               <SquadPitch
                 capacity={XI_SHAPE}
                 players={starters.map(p => ({
                   id: p.player_id, name: p.web_name, club: p.club_short, position: p.position
                 }))}
+                onSelect={isMine ? id => {
+                  const p = squad!.find(x => x.player_id === id)
+                  if (p) onTap(p)
+                } : undefined}
+                selected={picked}
+                canSwap={id => {
+                  const p = squad!.find(x => x.player_id === id)
+                  return p ? canSwapWith(p) : false
+                }}
+                locked={id => !!squad!.find(x => x.player_id === id)?.locked}
+                points={id => squad!.find(x => x.player_id === id)?.gw_points}
               />
-              <div className="row between mt-12" style={{ marginTop: 12 }}>
-                <span className="tiny muted">Bench</span>
-                <span className="tiny muted num">{bench.length}</span>
-              </div>
-              <div className="row gap-6 wrap" style={{ marginTop: 6 }}>
-                {bench.map((p, i) => (
-                  <span key={p.player_id} className="bench-chip">
-                    <span className="num tiny muted">{i + 1}</span>{p.web_name}
-                  </span>
-                ))}
-              </div>
+              <p className="tiny muted" style={{ marginTop: 12 }}>
+                {isMine
+                  ? 'Tap a player, then tap a bench player in the same position to swap.'
+                  : 'Points shown are for this gameweek.'}
+              </p>
             </aside>
 
             <div className="squad-list-col">
-              <Eyebrow>Starting XI</Eyebrow>
-              {POSITIONS.map(pos => (
-                <PositionBlock key={pos} pos={pos}
-                  players={starters.filter(p => p.position === pos)}
-                  expected={XI_SHAPE[pos]}
-                  picked={picked} canSwapWith={canSwapWith} onTap={onTap}
-                  interactive={isMine} gw={gw} />
-              ))}
-
-              <div className="mt-32">
+              <div>
                 <Eyebrow>Bench · in substitution order</Eyebrow>
                 <ul className="list">
                   {bench.map((p, i) => (
-                    <PlayerRow key={p.player_id} p={p} gw={gw}
+                    <PlayerRow key={p.player_id} p={p} gw={gw} crest={crestOf(p)}
                       lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
                       selected={picked === p.player_id}
                       highlight={canSwapWith(p)}
@@ -244,41 +245,11 @@ export default function Squad () {
   )
 }
 
-function PositionBlock ({
-  pos, players, expected, picked, canSwapWith, onTap, interactive, gw
-}: {
-  pos: Position
-  players: SquadPlayer[]
-  expected: number
-  picked: number | null
-  canSwapWith: (p: SquadPlayer) => boolean
-  onTap: (p: SquadPlayer) => void
-  interactive: boolean
-  gw: number
-}) {
-  return (
-    <div className="mt-16">
-      <div className="row gap-8" style={{ marginBottom: 4 }}>
-        <PosChip pos={pos} />
-        <span className="tiny muted">{POS_LABEL[pos]} · {players.length}/{expected}</span>
-      </div>
-      <ul className="list">
-        {players.map(p => (
-          <PlayerRow key={p.player_id} p={p} gw={gw}
-            selected={picked === p.player_id}
-            highlight={canSwapWith(p)}
-            interactive={interactive}
-            onTap={() => onTap(p)} />
-        ))}
-      </ul>
-    </div>
-  )
-}
-
 function PlayerRow ({
-  p, lead, trailing, selected, highlight, interactive, onTap
+  p, lead, trailing, selected, highlight, interactive, onTap, crest
 }: {
   p: SquadPlayer
+  crest?: number
   gw: number
   lead?: React.ReactNode
   trailing?: React.ReactNode
@@ -301,6 +272,7 @@ function PlayerRow ({
         {...(interactive ? { onClick: onTap, disabled: p.locked } : {})}
       >
         {lead}
+        <Crest code={crest} size={18} alt={p.club_short ?? ''} />
         <span className="grow" style={{ minWidth: 0 }}>
           <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
           <span className="row gap-6 tiny muted" style={{ marginTop: 2 }}>

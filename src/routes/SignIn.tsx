@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { supabase, readableError } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { Loading, Notice } from '../components/ui'
+import SquadPitch from '../components/SquadPitch'
 
 export default function SignIn () {
   const { session, loading } = useAuth()
@@ -173,6 +174,12 @@ export default function SignIn () {
             </div>
           </div>
 
+          {/* Every comparable product puts its actual interface on the
+              landing page. Ours was a headline, a form and a paragraph — the
+              draft clock and the squad shape, which are the whole reason to
+              use this, were invisible until after signing up. */}
+          <ProductShot />
+
           {/* --- the rules ----------------------------------------------------
               Four verbs in order. The steps read chronologically on their own,
               so numbering them was decoration standing in for structure. */}
@@ -232,5 +239,68 @@ export default function SignIn () {
         .rules p { margin-top: 10px; line-height: 1.55; }
       `}</style>
     </div>
+  )
+}
+
+/**
+ * A still of the draft room: the clock at the moment it is yours, and a squad
+ * half-built. Real components and real markup, not an image — it stays honest
+ * as the design changes, and it costs no asset pipeline.
+ */
+function ProductShot () {
+  const squad = [
+    { id: 1, name: 'Haaland',     club: 'MCI', position: 'FWD' as const },
+    { id: 2, name: 'Saka',        club: 'ARS', position: 'MID' as const },
+    { id: 3, name: 'B.Fernandes', club: 'MUN', position: 'MID' as const },
+    { id: 4, name: 'Gabriel',     club: 'ARS', position: 'DEF' as const },
+    { id: 5, name: 'Virgil',      club: 'LIV', position: 'DEF' as const },
+    { id: 6, name: 'Raya',        club: 'ARS', position: 'GK'  as const }
+  ]
+  // Enough rows that the board column stands as tall as the pitch beside it.
+  const board = [
+    ['MID', 'Salah',       'LIV', 211],
+    ['FWD', 'Isak',        'NEW', 187],
+    ['DEF', 'Saliba',      'ARS', 174],
+    ['MID', 'Palmer',      'CHE', 168],
+    ['MID', 'Gibbs-White', 'NFO', 162],
+    ['FWD', 'Watkins',     'AVL', 158],
+    ['DEF', 'Gvardiol',    'MCI', 151],
+    ['GK',  'Sánchez',     'CHE', 146],
+    ['MID', 'Semenyo',     'BOU', 141]
+  ] as const
+
+  return (
+    <section className="shot" aria-label="The draft room">
+      <div className="shot-main">
+        <div className="shot-clock">
+          <div>
+            <span className="eyebrow">Round 6 · pick 11 of 32</span>
+            <h2 className="shot-turn">You’re on the clock</h2>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="figure shot-time">1:42</div>
+            <span className="eyebrow">Time left</span>
+          </div>
+        </div>
+        <ul className="shot-board">
+          {board.map(([pos, name, club, pts]) => (
+            <li key={name}>
+              <span className={`pos ${pos}`}>{pos}</span>
+              <span className="grow">
+                <span className="name">{name}</span>
+                <span className="club" style={{ marginLeft: 8 }}>{club}</span>
+              </span>
+              <span className="num small">{pts}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="shot-side">
+        <span className="eyebrow">Your squad · 6 of 16</span>
+        <div style={{ marginTop: 10 }}>
+          <SquadPitch players={squad} compact />
+        </div>
+      </div>
+    </section>
   )
 }

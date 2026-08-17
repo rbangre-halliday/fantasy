@@ -63,8 +63,10 @@ async function main () {
   log('Fetching bootstrap-static…')
   const boot = await get('/bootstrap-static/')
 
+  // `code` is the Premier League's own club id, which is what its image CDN
+  // keys badges on — distinct from the FPL team id we use as our key.
   await upsert('epl_teams', boot.teams.map(t => ({
-    id: t.id, name: t.name, short_name: t.short_name
+    id: t.id, name: t.name, short_name: t.short_name, code: t.code
   })), 'id')
 
   await upsert('gameweeks', boot.events.map(e => ({

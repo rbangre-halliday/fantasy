@@ -805,9 +805,13 @@ a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(-
 .list-row {
   display: flex;
   align-items: center;
-  gap: var(--s-3);
+  gap: var(--s-2);
   width: calc(100% + 24px);
-  padding: 13px 12px;
+  /* Tighter than it was. A row carrying a badge, a name, a club and two
+     numbers was 66px tall; Kalshi fits a whole market with two outcomes in
+     roughly twice that. Denser means more of the board on screen at once,
+     which is the entire job of these lists. */
+  padding: 9px 12px;
   margin: 0 -12px;
   border: 0;
   border-bottom: 1px solid var(--rule);
@@ -1282,3 +1286,123 @@ a.list-row.is-you:hover { background: var(--stock-3); }
   padding-top: 10px;
   border-top: 1px solid var(--rule);
 }
+
+/* ------------------------------------------------------- in-app headers ---
+   A 54px condensed headline reading "PLAYERS" spent three hundred pixels of
+   the fold restating the tab that was just pressed. In-app screens get a
+   compact bar instead; the display treatment stays for the landing page,
+   where a headline is the job.
+   -------------------------------------------------------------------------- */
+
+.page-head-compact {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-5) 0 var(--s-4);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--s-5);
+}
+.page-title {
+  font-stretch: 86%;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.page-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fg-3);
+  max-width: 60ch;
+}
+/* On a phone the supporting line is the first thing to go: it is explanation,
+   and the screen underneath it is the actual answer. */
+@media (max-width: 640px) {
+  .page-meta { display: none; }
+  .page-head-compact { padding: var(--s-4) 0 var(--s-3); margin-bottom: var(--s-4); }
+}
+
+/* ------------------------------------------------------------- crests ------ */
+
+.crest { flex: none; object-fit: contain; }
+.crest-gap { flex: none; display: inline-block; }
+
+/* A portrait sits on the club's own dark plate, so cut-out player images with
+   transparent backgrounds have something to stand on. */
+.portrait {
+  flex: none;
+  width: 66px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--stock-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+}
+.portrait img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+/* Touch targets must not shrink with the density: 44px is the floor on a
+   phone even where the visual row is tighter. */
+@media (pointer: coarse) {
+  .list-row { min-height: 46px; }
+}
+
+/* ----------------------------------------------------------- product shot ---
+   A still of the draft room on the landing page, built from the same parts as
+   the real thing so it cannot drift out of date.
+   -------------------------------------------------------------------------- */
+
+.shot {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--s-5);
+  background: var(--stock-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+}
+@media (min-width: 860px) {
+  .shot { grid-template-columns: minmax(0, 1.5fr) minmax(230px, .9fr); gap: var(--s-6); }
+}
+
+.shot-clock {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--live-deep);
+  border: 1px solid var(--live);
+  border-radius: var(--r);
+}
+.shot-turn {
+  margin-top: 6px;
+  font-stretch: 84%;
+  font-size: clamp(20px, 3.2vw, 30px);
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.shot-time { font-size: clamp(30px, 5.5vw, 46px); line-height: .9; }
+
+.shot-board { margin-top: var(--s-4); }
+.shot-board li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--rule);
+}
+.shot-board .name { font-size: 14px; }
+
+/* The sparkline is a texture, not a chart: it takes the accent only at the
+   head of the line, and stays out of the way of the totals beside it. */
+.spark { color: var(--uv); opacity: .85; flex: none; }
+.spark-gap { display: inline-block; flex: none; }
+@media (max-width: 640px) { .spark, .spark-gap { display: none; } }
+
+@media (max-width: 640px) { .spark-head { display: none; } }

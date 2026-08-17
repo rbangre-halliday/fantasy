@@ -12,9 +12,12 @@ const VIEWPORTS = [
 ]
 
 const SCREENS = [
+  ['leagues', '/',                      true],
+  ['squad',   `/l/${leagueId}/team`,    true],
   ['players', `/l/${leagueId}/players`, true],
   ['trades',  `/l/${leagueId}/trades`,  true],
-  ['squad',   `/l/${leagueId}/team`,    true]
+  ['table',   `/l/${leagueId}/table`,   true],
+  ['draft',   `/l/${leagueId}/draft`,   true]
 ]
 
 const browser = await chromium.launch()

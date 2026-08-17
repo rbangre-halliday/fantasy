@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import type { Position } from '../lib/types'
@@ -20,19 +20,59 @@ export function Eyebrow ({ children }: { children: ReactNode }) {
  * its own. So the context moves underneath, where it reads as the second half
  * of the sentence, and the title gets the top of the page to itself.
  */
-export function PageHead ({ title, meta, aside }: {
+export function PageHead ({ title, meta, aside, size = 'compact' }: {
   title: ReactNode
   meta?: ReactNode
   aside?: ReactNode
+  /**
+   * `display` is marketing scale, for the signed-out landing page.
+   * `compact` is the in-app default: a 54px condensed headline reading
+   * "PLAYERS" spent 300px of the fold restating the tab you just pressed,
+   * which is what made these screens read as empty. Kalshi and Linear both
+   * start their content within ~130px; this is how we get there.
+   */
+  size?: 'display' | 'compact'
 }) {
+  if (size === 'display') {
+    return (
+      <header className="page-head">
+        <div className="grow">
+          <h1 className="h1">{title}</h1>
+          {meta && <p className="standfirst">{meta}</p>}
+        </div>
+        {aside}
+      </header>
+    )
+  }
   return (
-    <header className="page-head">
-      <div className="grow">
-        <h1 className="h1">{title}</h1>
-        {meta && <p className="standfirst">{meta}</p>}
+    <header className="page-head-compact">
+      <div className="grow" style={{ minWidth: 0 }}>
+        <h1 className="page-title truncate">{title}</h1>
+        {meta && <p className="page-meta">{meta}</p>}
       </div>
       {aside}
     </header>
+  )
+}
+
+/**
+ * A club badge. Falls back to nothing rather than a broken-image glyph — a
+ * missing crest should cost the row nothing.
+ */
+export function Crest ({ code, size = 20, alt = '' }: {
+  code: number | null | undefined
+  size?: number
+  alt?: string
+}) {
+  const [failed, setFailed] = useState(false)
+  if (!code || failed) return <span className="crest-gap" style={{ width: size, height: size }} />
+  return (
+    <img
+      className="crest"
+      src={`https://resources.premierleague.com/premierleague/badges/50/t${code}.png`}
+      width={size} height={size} alt={alt} loading="lazy" decoding="async"
+      onError={() => setFailed(true)}
+    />
   )
 }
 
@@ -252,3 +292,61 @@ export const IconChevron = ({ dir = 'right', size = 15 }: {
 export const IconLock = () => (
   <svg viewBox="0 0 24 24" width="11" height="11" {...stroke}><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>
 )
+
+/**
+ * The player, as a face. A signing or a pick is the one moment worth showing
+ * someone who they are actually getting, rather than a name and two numbers.
+ * Degrades to the club badge, then to nothing.
+ */
+export function PlayerPortrait ({ code, badge }: {
+  code: number | null | undefined
+  badge: number | null | undefined
+}) {
+  const [failed, setFailed] = useState(false)
+  const src = code && !failed
+    ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`
+    : null
+
+  return (
+    <div className="portrait">
+      {src
+        ? <img src={src} alt="" width={66} height={84} loading="lazy" decoding="async"
+            onError={() => setFailed(true)} />
+        : <Crest code={badge} size={34} />}
+    </div>
+  )
+}
+
+/**
+ * A season in twenty pixels. Points per gameweek, drawn as a line — the shape
+ * of a run is something a column of totals cannot show: who is climbing, who
+ * peaked in September.
+ *
+ * Deliberately unlabelled and un-axed. At this size a scale would be noise;
+ * the row already carries the exact number.
+ */
+export function Sparkline ({ values, width = 96, height = 26 }: {
+  values: number[]
+  width?: number
+  height?: number
+}) {
+  if (values.length < 2) return <span className="spark-gap" style={{ width, height }} />
+
+  const max = Math.max(...values, 1)
+  const min = Math.min(...values, 0)
+  const span = max - min || 1
+  const step = width / (values.length - 1)
+  const y = (v: number) => height - 2 - ((v - min) / span) * (height - 4)
+
+  const points = values.map((v, i) => `${(i * step).toFixed(1)},${y(v).toFixed(1)}`)
+  const last = values[values.length - 1]
+
+  return (
+    <svg className="spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`}
+      role="img" aria-label={`Points by gameweek: ${values.join(', ')}`}>
+      <polyline points={points.join(' ')} fill="none" stroke="currentColor"
+        strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={(values.length - 1) * step} cy={y(last)} r="2" fill="currentColor" />
+    </svg>
+  )
+}

@@ -19,12 +19,19 @@ export interface PitchPlayer {
  * information, and the shape is legible without any of that.
  */
 export default function SquadPitch ({
-  players, capacity = SQUAD_CAPS, compact = false
+  players, capacity = SQUAD_CAPS, compact = false,
+  onSelect, selected, canSwap, points, locked
 }: {
   players: PitchPlayer[]
   /** Slots per position: the 2/5/5/4 squad by default, or 1/4/4/2 for an XI. */
   capacity?: Record<Position, number>
   compact?: boolean
+  /** Supplied on the squad screen, where the pitch *is* the lineup editor. */
+  onSelect?: (id: number) => void
+  selected?: number | null
+  canSwap?: (id: number) => boolean
+  points?: (id: number) => number | undefined
+  locked?: (id: number) => boolean
 }) {
   // Goalkeepers at the bottom, forwards at the top — the way a formation is drawn.
   const rows: Position[] = ['FWD', 'MID', 'DEF', 'GK']
@@ -65,12 +72,37 @@ export default function SquadPitch ({
           const empties = Math.max(0, capacity[pos] - owned.length)
           return (
             <div className="pitch-row" key={pos}>
-              {owned.map(p => (
-                <div className="slot filled" key={p.id} title={`${p.name} · ${p.club ?? ''}`}>
-                  <span className="slot-name">{p.name}</span>
-                  {!compact && <span className="slot-club">{p.club ?? ''}</span>}
-                </div>
-              ))}
+              {owned.map(p => {
+                const isSel = selected === p.id
+                const swappable = canSwap?.(p.id) ?? false
+                const isLocked = locked?.(p.id) ?? false
+                const pts = points?.(p.id)
+                const cls = ['slot', 'filled',
+                  isSel && 'is-selected',
+                  swappable && 'is-swappable',
+                  isLocked && 'is-locked'].filter(Boolean).join(' ')
+
+                // A button only where it does something. On screens that use
+                // the pitch as a diagram this stays a div, so nothing offers
+                // an interaction it cannot honour.
+                return onSelect ? (
+                  <button type="button" className={cls} key={p.id}
+                    disabled={isLocked}
+                    aria-pressed={isSel}
+                    title={`${p.name} · ${p.club ?? ''}`}
+                    onClick={() => onSelect(p.id)}>
+                    <span className="slot-name">{p.name}</span>
+                    {pts !== undefined
+                      ? <span className="slot-pts num">{pts}</span>
+                      : !compact && <span className="slot-club">{p.club ?? ''}</span>}
+                  </button>
+                ) : (
+                  <div className={cls} key={p.id} title={`${p.name} · ${p.club ?? ''}`}>
+                    <span className="slot-name">{p.name}</span>
+                    {!compact && <span className="slot-club">{p.club ?? ''}</span>}
+                  </div>
+                )
+              })}
               {Array.from({ length: empties }, (_, i) => (
                 // An empty slot is an absence. Repeating "DEF" down a column
                 // of dashed boxes turns the pitch into a form; a single mark
@@ -148,6 +180,23 @@ export default function SquadPitch ({
           border-style: solid;
           border-color: var(--uv-line);
           background: var(--uv-block);
+        }
+        button.slot { font: inherit; color: inherit; cursor: pointer; }
+        button.slot:disabled { cursor: default; }
+        .slot.is-selected {
+          border-color: var(--uv);
+          background: var(--uv);
+        }
+        .slot.is-selected .slot-name,
+        .slot.is-selected .slot-pts { color: var(--uv-ink); }
+        /* Where this one can go. Dashed-to-solid on the accent is enough; a
+           glow would be the only soft edge in the whole interface. */
+        .slot.is-swappable { border-color: var(--uv); border-style: solid; }
+        .slot.is-locked { opacity: .55; }
+        .slot-pts {
+          font-size: 11px;
+          font-weight: 700;
+          color: #B79BC6;
         }
         .slot-name {
           font-size: ${compact ? '11px' : '12px'};

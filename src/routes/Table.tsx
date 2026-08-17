@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, Loading, Notice, PageHead } from '../components/ui'
+import { Eyebrow, Loading, Notice, PageHead, Sparkline } from '../components/ui'
 import { relativeTime } from '../lib/format'
 import type { LeaguePlayer, Standing, Txn } from '../lib/types'
 
@@ -18,13 +18,15 @@ export default function Table () {
   const [rows, setRows] = useState<Standing[] | null>(null)
   const [txns, setTxns] = useState<Txn[]>([])
   const [players, setPlayers] = useState<LeaguePlayer[]>([])
+  const [scores, setScores] = useState<{ member_id: string; gw: number; points: number }[]>([])
 
   useEffect(() => {
     Promise.all([
       api.getStandings(league.id),
       api.getTransactions(league.id, 40),
-      api.getLeaguePlayers(league.id).catch(() => [] as LeaguePlayer[])
-    ]).then(([s, t, p]) => { setRows(s); setTxns(t); setPlayers(p) }).catch(fail)
+      api.getLeaguePlayers(league.id).catch(() => [] as LeaguePlayer[]),
+      api.getMemberScores(league.id).catch(() => [])
+    ]).then(([s, t, p, sc]) => { setRows(s); setTxns(t); setPlayers(p); setScores(sc) }).catch(fail)
   }, [league.id, fail])
 
   const nameOf = useMemo(() => new Map(members.map(m => [m.id, m.team_name])), [members])
@@ -48,6 +50,18 @@ export default function Table () {
   // Draft picks already have a whole screen of their own, and 96 of them would
   // bury every real move. This feed is for what happens after the draft.
   const activity = useMemo(() => txns.filter(t => t.type !== 'draft'), [txns])
+
+  /** Points per gameweek per manager, in gameweek order, for the sparkline. */
+  const trend = useMemo(() => {
+    const by = new Map<string, number[]>()
+    for (const s of scores) {
+      if (s.gw < league.scoring_start_gw) continue
+      const list = by.get(s.member_id) ?? []
+      list.push(s.points)
+      by.set(s.member_id, list)
+    }
+    return by
+  }, [scores, league.scoring_start_gw])
 
   return (
     <div className="page narrow">
@@ -84,6 +98,7 @@ export default function Table () {
             <div className="thead">
               <span style={{ width: 26 }}>#</span>
               <span className="grow">Team</span>
+              <span className="spark-head" style={{ width: 96 }}>Form</span>
               <span style={{ width: 46, textAlign: 'right' }}>GW{currentGw}</span>
               <span style={{ width: 58, textAlign: 'right' }}>Total</span>
             </div>
@@ -111,6 +126,7 @@ export default function Table () {
                       </span>
                       <span className="tiny muted truncate">{r.manager_name}</span>
                     </span>
+                    <Sparkline values={trend.get(r.member_id) ?? []} />
                     <span className="num small muted" style={{ width: 46, textAlign: 'right' }}>
                       {r.gw_points}
                     </span>

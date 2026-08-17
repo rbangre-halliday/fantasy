@@ -3,8 +3,9 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconStar, Loading, Notice, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
+import { Crest, Eyebrow, IconStar, Loading, Notice, PlayerPortrait, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
+import { useCrests } from '../lib/images'
 import { useShortlist } from '../lib/shortlist'
 import { clock } from '../lib/format'
 import { POSITIONS, SQUAD_CAPS } from '../lib/types'
@@ -15,6 +16,7 @@ type Filter = 'ALL' | 'SHORT' | Position
 export default function DraftRoom () {
   const { league, members, me, draft, isCommissioner, refresh } = useLeague()
   const { toast, fail } = useToast()
+  const crests = useCrests()
 
   const [players, setPlayers] = useState<LeaguePlayer[] | null>(null)
   const [picks, setPicks] = useState<DraftPick[]>([])
@@ -339,6 +341,7 @@ export default function DraftRoom () {
                         <button className={`list-row ${capped ? 'is-disabled' : ''}`}
                           disabled={!myTurn || capped || busy}
                           onClick={() => setConfirming(p)}>
+                          <Crest code={crests.teamCode.get(p.team_id ?? -1)} alt={p.club ?? ''} />
                           <PosChip pos={p.position} />
                           <span className="grow" style={{ minWidth: 0 }}>
                             <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
@@ -429,8 +432,10 @@ export default function DraftRoom () {
             </>
           }>
           <div className="row gap-12">
-            <PosChip pos={confirming.position} />
+            <PlayerPortrait code={crests.playerCode.get(confirming.id)}
+              badge={crests.teamCode.get(confirming.team_id ?? -1)} />
             <div>
+              <div className="row gap-8"><PosChip pos={confirming.position} /></div>
               <div className="h3">{confirming.first_name} {confirming.second_name}</div>
               <div className="club">{confirming.club}</div>
             </div>

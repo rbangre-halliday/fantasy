@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconTrade, Loading, Notice, PageHead, PosChip, Sheet } from '../components/ui'
+import { Crest, Eyebrow, IconTrade, Loading, Notice, PageHead, PosChip, Sheet } from '../components/ui'
+import { useCrests } from '../lib/images'
 import { relativeTime } from '../lib/format'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position, Trade, TradePlayerRow } from '../lib/types'
@@ -182,6 +183,7 @@ function TradeCard ({
 function Side ({ rows, byId, heading }: {
   rows: TradePlayerRow[]; byId: Map<number, LeaguePlayer>; heading: string
 }) {
+  const crests = useCrests()
   return (
     <div>
       <div className="tiny muted" style={{ marginBottom: 6 }}>{heading}</div>
@@ -190,6 +192,7 @@ function Side ({ rows, byId, heading }: {
           const p = byId.get(r.player_id)
           return (
             <li key={r.id} className="row gap-6" style={{ minWidth: 0 }}>
+              {p && <Crest code={crests.teamCode.get(p.team_id ?? -1)} size={16} />}
               {p && <PosChip pos={p.position} />}
               <span className="small truncate">{p?.web_name ?? `#${r.player_id}`}</span>
             </li>

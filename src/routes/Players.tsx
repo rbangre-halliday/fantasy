@@ -3,8 +3,9 @@ import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
+import { Crest, Eyebrow, IconLock, Loading, Notice, PageHead, PlayerPortrait, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
+import { useCrests } from '../lib/images'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position } from '../lib/types'
 
@@ -14,6 +15,7 @@ type Scope = 'free' | 'all'
 export default function Players () {
   const { league, me, refresh } = useLeague()
   const { toast, fail } = useToast()
+  const crests = useCrests()
 
   const [players, setPlayers] = useState<LeaguePlayer[] | null>(null)
   const [filter, setFilter] = useState<Filter>('ALL')
@@ -134,6 +136,7 @@ export default function Players () {
                   <button className={`list-row ${free ? '' : 'is-disabled'}`}
                     disabled={!open || !free || p.locked}
                     onClick={() => { setSigning(p); setDropId(null) }}>
+                    <Crest code={crests.teamCode.get(p.team_id ?? -1)} alt={p.club ?? ''} />
                     <PosChip pos={p.position} />
                     <span className="grow" style={{ minWidth: 0 }}>
                       <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
@@ -183,9 +186,11 @@ export default function Players () {
             </>
           }>
           <div className="row gap-12">
-            <PosChip pos={signing.position} />
+            <PlayerPortrait code={crests.playerCode.get(signing.id)}
+              badge={crests.teamCode.get(signing.team_id ?? -1)} />
             <div>
-              <div className="h3">{signing.first_name} {signing.second_name}</div>
+              <div className="row gap-8"><PosChip pos={signing.position} /></div>
+              <div className="h3" style={{ marginTop: 6 }}>{signing.first_name} {signing.second_name}</div>
               <div className="club">{signing.club} · {signing.current_season_points} pts this season</div>
             </div>
           </div>

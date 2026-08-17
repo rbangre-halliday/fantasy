@@ -62,6 +62,13 @@ export const getStandings = (leagueId: string) =>
       .order('total_points', { ascending: false })
   )
 
+/** Per-gameweek scores, for the standings sparkline. */
+export const getMemberScores = (leagueId: string) =>
+  ok<{ member_id: string; gw: number; points: number }[]>(
+    supabase.from('member_gw_scores').select('member_id, gw, points')
+      .eq('league_id', leagueId).order('gw')
+  )
+
 export const getTrades = (leagueId: string) =>
   ok<Trade[]>(
     supabase.from('trades').select('*')
