@@ -1330,12 +1330,12 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 .crest { flex: none; object-fit: contain; }
 .crest-gap { flex: none; display: inline-block; }
 
-/* A portrait sits on the club's own dark plate, so cut-out player images with
-   transparent backgrounds have something to stand on. */
+/* The crest sits on its own plate so a transparent badge has something to
+   stand on, and so the dialog has a fixed anchor whatever the club. */
 .portrait {
   flex: none;
   width: 66px;
-  height: 84px;
+  height: 66px;
   display: grid;
   place-items: center;
   overflow: hidden;

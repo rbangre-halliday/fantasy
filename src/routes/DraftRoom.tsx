@@ -178,7 +178,12 @@ export default function DraftRoom () {
       await api.makePick(league.id, p.id)
       setConfirming(null)
       toast(`${p.web_name} is yours`, 'good')
-      await refresh()
+      // Refetch our own view rather than waiting on the realtime echo of our
+      // own write. Relying on the socket to tell us about something we just
+      // did made the squad's arrival a race, and a lost or slow event left
+      // the pitch empty until a manual refresh. Realtime is for what *other*
+      // managers do.
+      await Promise.all([reload(), refresh()])
     } catch (err) { fail(err); void reload() }
     finally { setBusy(false) }
   }
@@ -432,8 +437,7 @@ export default function DraftRoom () {
             </>
           }>
           <div className="row gap-12">
-            <PlayerPortrait code={crests.playerCode.get(confirming.id)}
-              badge={crests.teamCode.get(confirming.team_id ?? -1)} />
+            <PlayerPortrait badge={crests.teamCode.get(confirming.team_id ?? -1)} />
             <div>
               <div className="row gap-8"><PosChip pos={confirming.position} /></div>
               <div className="h3">{confirming.first_name} {confirming.second_name}</div>

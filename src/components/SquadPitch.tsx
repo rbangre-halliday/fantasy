@@ -164,7 +164,7 @@ export default function SquadPitch ({
           flex: 1 1 0;
           min-width: 0;
           max-width: 92px;
-          height: ${compact ? '38px' : '44px'};
+          height: ${compact ? '42px' : '48px'};
           padding: 0 7px;
           display: flex;
           flex-direction: column;
@@ -198,14 +198,21 @@ export default function SquadPitch ({
           font-weight: 700;
           color: #B79BC6;
         }
+        /* Names wrap to a second line rather than truncating. "Matheus N."
+           clipped to "Mathe…" is not a player anyone can identify, and the
+           slot has the height to spare once the club line is optional. */
         .slot-name {
-          font-size: ${compact ? '11px' : '12px'};
+          font-size: ${compact ? '10.5px' : '11.5px'};
           font-weight: 650;
-          letter-spacing: -.012em;
+          line-height: 1.08;
+          letter-spacing: -.02em;
           max-width: 100%;
+          text-align: center;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow-wrap: anywhere;
           color: var(--fg);
         }
         /* Tinted from the block it sits on, never grey — grey on a coloured

@@ -294,25 +294,19 @@ export const IconLock = () => (
 )
 
 /**
- * The player, as a face. A signing or a pick is the one moment worth showing
- * someone who they are actually getting, rather than a name and two numbers.
- * Degrades to the club badge, then to nothing.
+ * The club, big, at the moment a player changes hands.
+ *
+ * This used to be the player's own photo. The Premier League only still serves
+ * those from a legacy path — every current one 403s — and that legacy path is a
+ * season behind: it had Gyökeres in a Brighton shirt after his move to Arsenal.
+ * A fantasy app that shows you the wrong kit for the player you are about to
+ * draft is worse than one that shows you no face at all. The crest is keyed on
+ * the club in our own data, so it is right by construction.
  */
-export function PlayerPortrait ({ code, badge }: {
-  code: number | null | undefined
-  badge: number | null | undefined
-}) {
-  const [failed, setFailed] = useState(false)
-  const src = code && !failed
-    ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`
-    : null
-
+export function PlayerPortrait ({ badge }: { badge: number | null | undefined }) {
   return (
     <div className="portrait">
-      {src
-        ? <img src={src} alt="" width={66} height={84} loading="lazy" decoding="async"
-            onError={() => setFailed(true)} />
-        : <Crest code={badge} size={34} />}
+      <Crest code={badge} size={46} />
     </div>
   )
 }

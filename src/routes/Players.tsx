@@ -186,8 +186,7 @@ export default function Players () {
             </>
           }>
           <div className="row gap-12">
-            <PlayerPortrait code={crests.playerCode.get(signing.id)}
-              badge={crests.teamCode.get(signing.team_id ?? -1)} />
+            <PlayerPortrait badge={crests.teamCode.get(signing.team_id ?? -1)} />
             <div>
               <div className="row gap-8"><PosChip pos={signing.position} /></div>
               <div className="h3" style={{ marginTop: 6 }}>{signing.first_name} {signing.second_name}</div>

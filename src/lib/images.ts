@@ -17,20 +17,15 @@ import { supabase } from './supabase'
 export const badgeUrl = (teamCode: number | null | undefined, size: 25 | 50 | 100 = 50) =>
   teamCode ? `https://resources.premierleague.com/premierleague/badges/${size}/t${teamCode}.png` : null
 
-export const photoUrl = (playerCode: number | null | undefined) =>
-  playerCode ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${playerCode}.png` : null
-
 interface Lookups {
   /** FPL team id → Premier League club code, for badges. */
   teamCode: Map<number, number>
   /** Club short name ("ARS") → club code, for rows that carry only the
       abbreviation. member_squad returns club_short and no team id. */
   shortCode: Map<string, number>
-  /** FPL element id → player code, for portraits. */
-  playerCode: Map<number, number>
 }
 
-const empty: Lookups = { teamCode: new Map(), shortCode: new Map(), playerCode: new Map() }
+const empty: Lookups = { teamCode: new Map(), shortCode: new Map() }
 
 // Module-level so every screen in a session shares one fetch. Six hundred
 // (id, code) pairs is a few kilobytes and it never changes mid-session.
@@ -38,10 +33,9 @@ let cache: Lookups | null = null
 let inflight: Promise<Lookups> | null = null
 
 async function fetchLookups (): Promise<Lookups> {
-  const [teams, players] = await Promise.all([
-    supabase.from('epl_teams').select('id, code, short_name'),
-    supabase.from('epl_players').select('id, code').eq('active', true)
-  ])
+  // Twenty rows. Player portraits were dropped, so the 600-row player lookup
+  // they needed goes with them.
+  const teams = await supabase.from('epl_teams').select('id, code, short_name')
   return {
     teamCode: new Map(
       (teams.data ?? [])
@@ -50,11 +44,7 @@ async function fetchLookups (): Promise<Lookups> {
     shortCode: new Map(
       (teams.data ?? [])
         .filter(t => t.code != null)
-        .map(t => [t.short_name as string, t.code as number])),
-    playerCode: new Map(
-      (players.data ?? [])
-        .filter(p => p.code != null)
-        .map(p => [p.id as number, p.code as number]))
+        .map(t => [t.short_name as string, t.code as number]))
   }
 }
 
