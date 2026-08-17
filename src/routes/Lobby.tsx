@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
@@ -12,6 +12,15 @@ export default function Lobby () {
   const [busy, setBusy] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [teamName, setTeamName] = useState(me.team_name)
+
+  // /l/:id is the league's front door — it is what "My leagues" links to and
+  // what people paste to each other — but the lobby is only the right screen
+  // before the draft. Once it is running this was still offering "Start the
+  // draft", a button whose only possible outcome was an error.
+  if (league.status === 'drafting') return <Navigate to={`/l/${league.id}/draft`} replace />
+  if (league.status === 'active' || league.status === 'completed') {
+    return <Navigate to={`/l/${league.id}/team`} replace />
+  }
 
   // Drafting happens on this same origin, so the invite link works for
   // anyone — signed in or not.

@@ -108,11 +108,16 @@ await step("the other manager sees the pick without reloading", async () => {
   return 'propagated'
 })
 
-await step('the turn passed to the other manager', async () => {
-  await them.page.waitForTimeout(1500)
-  if (!(await onClock(them.page))) throw new Error('the other browser is not on the clock')
-  if (await onClock(me.page)) throw new Error('both browsers think they are on the clock')
-  return 'turn moved'
+await step('exactly one manager is on the clock', async () => {
+  // Not "the turn passed to the other manager": a snake order doubles back at
+  // the turn, so with two managers picks 2 and 3 belong to the same one. The
+  // invariant that always holds is that the clock has exactly one owner.
+  await them.page.waitForTimeout(2000)
+  const mine = await onClock(me.page)
+  const theirs = await onClock(them.page)
+  if (mine && theirs) throw new Error('both browsers think they are on the clock')
+  if (!mine && !theirs) throw new Error('neither browser is on the clock')
+  return mine ? 'still mine (snake turn)' : 'passed over'
 })
 
 // ------------------------------------------- the socket is not a guarantee ---
@@ -150,6 +155,30 @@ await step('a pick still lands with realtime blocked', async () => {
     throw new Error(`with no socket the pitch went ${before} -> ${after}: the UI is relying on the realtime echo of its own write`)
   }
   return `${before} -> ${after} with the socket closed`
+})
+
+// ------------------------------------------------- routing follows state ----
+// The league's front door has to land you on the screen that matches what the
+// league is actually doing. It used to render the lobby whatever the status,
+// so mid-draft it offered "Start the draft" — a button whose only possible
+// outcome was an error.
+
+await step('the league root lands in the draft room while drafting', async () => {
+  await goto(me.page, `${base}/l/${leagueId}`)
+  const url = me.page.url()
+  const body = await me.page.textContent('body')
+  if (/start the draft/i.test(body)) throw new Error('the lobby is offering to start a draft that is already running')
+  if (!url.includes('/draft')) throw new Error(`landed on ${url}`)
+  return url.replace(base, '')
+})
+
+await step('the lobby is not reachable mid-draft by typing the URL', async () => {
+  await goto(them.page, `${base}/l/${leagueId}`)
+  const body = await them.page.textContent('body')
+  if (/invite code/i.test(body) && /start the draft/i.test(body)) {
+    throw new Error('lobby rendered for a non-commissioner mid-draft')
+  }
+  return 'redirected'
 })
 
 // ------------------------------------------------------------- shortlist ----
