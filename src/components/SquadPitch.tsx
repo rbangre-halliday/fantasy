@@ -72,8 +72,12 @@ export default function SquadPitch ({
                 </div>
               ))}
               {Array.from({ length: empties }, (_, i) => (
-                <div className="slot" key={`${pos}-${i}`}>
-                  <span className="slot-pos">{pos}</span>
+                // An empty slot is an absence. Repeating "DEF" down a column
+                // of dashed boxes turns the pitch into a form; a single mark
+                // says "nobody here yet" and lets the filled slots carry the
+                // reading.
+                <div className="slot" key={`${pos}-${i}`} aria-label={`Empty ${pos}`}>
+                  <span className="slot-dot" />
                 </div>
               ))}
             </div>
@@ -164,11 +168,11 @@ export default function SquadPitch ({
           text-transform: uppercase;
           color: #B79BC6;
         }
-        .slot-pos {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: .1em;
-          color: var(--fg-3);
+        .slot-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: var(--rule-2);
         }
       `}</style>
     </div>

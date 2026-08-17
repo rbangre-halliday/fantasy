@@ -54,21 +54,37 @@ export default function Trades () {
 
       {!open && <div className="mt-16"><Notice kind="warn">Trading opens once the draft is complete.</Notice></div>}
 
+      {/* A row of ghost buttons made the main action on this screen look like
+          an afterthought. Each manager gets a card carrying what you'd want
+          before opening an offer: who they are, and what they're worth. */}
       <div>
         <Eyebrow>Propose a trade</Eyebrow>
-        <div className="row gap-8 wrap">
-          {members.filter(m => m.id !== me.id).map(m => (
-            <button key={m.id} className="btn ghost" disabled={!open}
-              onClick={() => setComposing(m.id)}>
-              {m.team_name}
-            </button>
-          ))}
+        <div className="partner-grid">
+          {members.filter(m => m.id !== me.id).map(m => {
+            const squad = (players ?? []).filter(p => p.owner_member_id === m.id)
+            const points = squad.reduce((n, p) => n + p.current_season_points, 0)
+            return (
+              <button key={m.id} className="partner" disabled={!open}
+                onClick={() => setComposing(m.id)}>
+                <span className="partner-team truncate">{m.team_name}</span>
+                <span className="tiny muted truncate">{m.profiles?.name ?? 'Manager'}</span>
+                <span className="partner-foot">
+                  <span className="num tiny muted">{squad.length} players</span>
+                  <span className="num tiny">{points} pts</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       <div className="mt-40">
         <Eyebrow>Open offers</Eyebrow>
-        {pending.length === 0 ? <div className="empty">Nothing on the table.</div> : (
+        {pending.length === 0 ? (
+          <div className="empty">
+            Nothing on the table. Pick a manager above to make an offer.
+          </div>
+        ) : (
           <ul className="trade-list">
             {pending.map(t => (
               <TradeCard key={t.id} trade={t} rows={tradePlayers.filter(r => r.trade_id === t.id)}

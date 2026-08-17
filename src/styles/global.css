@@ -1227,3 +1227,58 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 /* Standings and activity are a handful of columns; a narrower measure keeps
    the team name and its total inside one glance. */
 .page.narrow { max-width: 720px; }
+
+/* ---------------------------------------------------------------- market ---
+   Free agency reads as a market on the left and your own squad on the right,
+   the same shape as the draft room. Below the breakpoint the squad drops
+   underneath, where it is context rather than a companion.
+   -------------------------------------------------------------------------- */
+
+.market-grid { display: grid; gap: var(--s-6); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) {
+  .market-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: var(--s-7); }
+  .market-squad { position: sticky; top: calc(var(--head-h) + 16px); align-self: start; }
+}
+
+/* --------------------------------------------------------------- trading ---
+   Managers you can deal with, as cards rather than a row of ghost buttons.
+   The main action on the screen should not look like a secondary one.
+   -------------------------------------------------------------------------- */
+
+.partner-grid {
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.partner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  text-align: left;
+  background: var(--stock-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .16s var(--ease), background .16s var(--ease);
+}
+.partner:hover:not(:disabled) { border-color: var(--uv); background: var(--stock-3); }
+.partner:disabled { opacity: .4; cursor: not-allowed; }
+
+.partner-team {
+  font-stretch: 86%;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+.partner-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}

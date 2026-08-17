@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
 import { Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
+import SquadPitch from '../components/SquadPitch'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position } from '../lib/types'
 
@@ -54,6 +55,14 @@ export default function Players () {
     ).slice(0, 200)
   }, [players, filter, scope, query])
 
+  const freeCount = useMemo(
+    () => (players ?? []).filter(p => !p.owner_member_id).length, [players])
+
+  const mySquad = useMemo(
+    () => mine.map(p => ({
+      id: p.id, name: p.web_name, club: p.club_short, position: p.position
+    })), [mine])
+
   // Squad size and shape are fixed, so signing a midfielder means dropping one.
   const droppable = useMemo(
     () => signing ? mine.filter(p => p.position === signing.position && !p.locked) : [],
@@ -75,10 +84,16 @@ export default function Players () {
   const open = league.status === 'active'
 
   return (
-    <div className="page narrow">
+    <div className="page">
       <PageHead
         title="Players"
-        meta="Free agency is first come, first served. Sign a player and you drop one in the same position." />
+        meta="Free agency is first come, first served. Sign a player and you drop one in the same position."
+        aside={
+          <div style={{ textAlign: 'right' }}>
+            <div className="figure" style={{ fontSize: 'clamp(38px, 8vw, 54px)' }}>{freeCount}</div>
+            <span className="eyebrow">Free agents</span>
+          </div>
+        } />
 
       {!open && (
         <div className="mt-16">
@@ -86,16 +101,21 @@ export default function Players () {
         </div>
       )}
 
-      <div className="stack gap-12">
-        <SearchField value={query} onChange={setQuery}
-          placeholder="Search player or club" />
-        <div className="row gap-8 wrap">
-          <Segmented<Scope> value={scope} onChange={setScope}
-            options={[{ value: 'free', label: 'Free agents' }, { value: 'all', label: 'Everyone' }]} />
-          <Segmented<Filter> value={filter} onChange={setFilter}
-            options={[{ value: 'ALL', label: 'All' }, ...POSITIONS.map(p => ({ value: p as Filter, label: p }))]} />
-        </div>
-      </div>
+      {/* Two columns, like the draft room: the market on the left, your own
+          squad on the right. A signing costs you a player in the same
+          position, so "who would I drop?" is part of reading this screen. */}
+      <div className="market-grid mt-24">
+        <section>
+          <div className="stack gap-12">
+            <SearchField value={query} onChange={setQuery}
+              placeholder="Search player or club" />
+            <div className="row gap-8 wrap">
+              <Segmented<Scope> value={scope} onChange={setScope}
+                options={[{ value: 'free', label: 'Free agents' }, { value: 'all', label: 'Everyone' }]} />
+              <Segmented<Filter> value={filter} onChange={setFilter}
+                options={[{ value: 'ALL', label: 'All' }, ...POSITIONS.map(p => ({ value: p as Filter, label: p }))]} />
+            </div>
+          </div>
 
       {players === null ? <Loading rows={10} /> : (
         <div className="mt-24">
@@ -104,7 +124,9 @@ export default function Players () {
             <span style={{ width: 84 }}>Owner</span>
             <span style={{ width: 44, textAlign: 'right' }}>Pts</span>
           </div>
-          <ul>
+          {/* Six hundred players is a 14,000px page if the list is left to
+              grow. It scrolls inside its own pane instead. */}
+          <ul className="scroll-pane">
             {visible.map(p => {
               const free = !p.owner_member_id
               return (
@@ -135,6 +157,20 @@ export default function Players () {
           {visible.length === 0 && <div className="empty">Nobody matches that.</div>}
         </div>
       )}
+        </section>
+
+        <aside className="market-squad">
+          <Eyebrow>Your squad</Eyebrow>
+          {/* compact here: in a 340px column the club line costs the width
+              that the name needs, and this pitch is reference rather than the
+              subject of the screen. */}
+          <SquadPitch players={mySquad} compact />
+          <p className="tiny muted" style={{ marginTop: 12 }}>
+            Signing a {filter === 'ALL' ? 'player' : filter} means dropping one in the
+            same position — squads are a fixed 2/5/5/4.
+          </p>
+        </aside>
+      </div>
 
       {signing && (
         <Sheet title={`Sign ${signing.web_name}`} onClose={() => setSigning(null)}
