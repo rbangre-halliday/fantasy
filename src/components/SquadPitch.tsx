@@ -116,7 +116,10 @@ export default function SquadPitch ({
         .pitch-row {
           display: flex;
           justify-content: center;
-          flex-wrap: wrap;
+          /* Never wrap. A five-slot row breaking to 4+1 draws a different
+             formation, which is the one thing this diagram must not do — the
+             slots shrink instead. */
+          flex-wrap: nowrap;
           gap: ${compact ? '5px' : '7px'};
         }
         .slot {
