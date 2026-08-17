@@ -73,12 +73,7 @@ export default function SignIn () {
       {/* --- hero ---------------------------------------------------------- */}
       <main style={{ flex: 1 }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 var(--gut)' }}>
-          <div className="crosshair" style={{ padding: 'clamp(48px, 9vw, 104px) 0' }}>
-            {/* the four corner ticks */}
-            <span className="mark" style={{ top: -4, left: -4 }} />
-            <span className="mark" style={{ top: -4, right: -4 }} />
-            <span className="mark" style={{ bottom: -4, left: -4 }} />
-            <span className="mark" style={{ bottom: -4, right: -4 }} />
+          <div style={{ padding: 'clamp(48px, 9vw, 104px) 0' }}>
 
             <div style={{
               display: 'grid', gap: 'clamp(40px, 6vw, 80px)',
@@ -91,7 +86,10 @@ export default function SignIn () {
                 <h1 className="h1">
                   A live snake draft
                   <br />
-                  <span style={{ color: 'var(--uv-type)' }}>for you and five friends</span>
+                  {/* Grey, not lilac. The second line dropping to a quieter
+                      neutral separates the two clauses without spending the
+                      accent, which the sign-in button needs more. */}
+                  <span style={{ color: 'var(--fg-2)' }}>for you and five friends</span>
                 </h1>
 
                 <p className="standfirst" style={{ maxWidth: 460, fontSize: 16 }}>

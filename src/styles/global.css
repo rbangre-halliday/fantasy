@@ -66,23 +66,19 @@
   /* ---- ultraviolet: the app's own voice ----
      Sitting at ~295° rather than the usual 265°, which is the difference
      between Premier League aubergine and every generated dashboard on earth.
-     Four stops, four jobs, no gradients between them. */
+     One hue, and only as flat fill — no gradients, no glow. */
   --uv-block: #2A0733;   /* flat block fill — the hero surface */
   --uv-line:  #5C2172;   /* the block's edge */
-  --uv:       #A03FD8;   /* controls, rules, marks — 4.0:1, UI-legible */
-  --uv-lift:  #CE8CFF;   /* marks only: underlines, carets, focus, selection */
-  --uv-pale:  #EBD9F7;   /* primary fill; takes near-black type at 14.6:1 */
-  --uv-type:  #D8C4EC;   /* purple set as TYPE — see the note below */
-  --uv-ink:   #150720;   /* type on any pale or lifted fill */
+  --uv:       #A03FD8;   /* THE accent: every primary fill, rule and mark */
+  --uv-lift:  #CE8CFF;   /* the same hue lifted, for marks on the block fill */
+  --uv-ink:   #FFFFFF;   /* type on the accent fill — 5.0:1 on --uv, AA */
   --uv-sel:   #1F0F2B;   /* flat selection wash — opaque, so it never stacks */
 
-  /* Why two purples for foreground: a vivid violet set as *text* on black is
-     the exact note that reads as cheap — it glows, and it is the single most
-     over-used colour in generated dark UI. So --uv-lift only ever draws marks
-     (an underline, a caret, a focus ring, a selection bar) and --uv-type is
-     what carries letterforms: a soft lilac ink, plainly purple beside white,
-     with a third of the chroma. Purple stays loud where it is a block of
-     colour and goes quiet where it is a word. */
+  /* There used to be a pale lilac for button fills and a softer lilac for
+     purple-as-type. Four tints of one hue meant the primary button read as the
+     same material as decorative text, so nothing announced itself as the
+     action. One violet now carries every job; separation comes from weight,
+     scale and the neutral greys, not from a fourth tint. */
 
   /* ---- state, and only state ---- */
   --live:      #FF3D71;  /* live, urgent, irreversible */
@@ -334,7 +330,9 @@ a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 22px), transparent 100%);
+  /* No fade-out mask: a soft gradient edge on a hard-edged UI reads as a
+     smudge. The pane is bounded by its own hairline instead. */
+  border-bottom: 1px solid var(--rule);
 }
 @media (min-width: 940px) { .scroll-pane { max-height: calc(100vh - 300px); } }
 
@@ -394,7 +392,7 @@ a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
   gap: 7px;
   color: var(--fg);
 }
-.wordmark i { font-style: normal; color: var(--uv-type); }
+.wordmark i { font-style: normal; color: var(--uv); }
 
 /* The one glyph in the masthead that has to stay a target on a phone. */
 .back-link {
@@ -579,35 +577,16 @@ a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(-
 }
 
 /* Corner ticks — a printer's registration mark, framing the landing hero. */
-.crosshair { position: relative; }
-.crosshair::before,
-.crosshair::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  height: 1px;
-  background: var(--rule);
-  pointer-events: none;
-}
-.crosshair::before { top: 0; }
-.crosshair::after  { bottom: 0; }
-
-.mark {
-  position: absolute;
-  width: 9px; height: 9px;
-  pointer-events: none;
-  color: var(--uv);
-}
-.mark::before, .mark::after { content: ''; position: absolute; background: currentColor; }
-.mark::before { left: 4px; top: 0; width: 1px; height: 9px; }
-.mark::after  { top: 4px; left: 0; height: 1px; width: 9px; }
+/* The hero used to carry faint corner registration marks. They were too
+   quiet to read as a deliberate grid and too visible to ignore, so they
+   just looked like dust. Cut rather than half-committed. */
 
 /* ------------------------------------------------------------- buttons ---
    Squared, flat, and set in tracked caps. The primary is a pale lilac plate
    with near-black type on it: 14.6:1, and it needs no glow to be found. */
 
 .btn {
-  --btn-bg: var(--uv-pale);
+  --btn-bg: var(--uv);
   --btn-fg: var(--uv-ink);
   display: inline-flex;
   align-items: center;
@@ -782,19 +761,30 @@ a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(-
 
 /* No pulsing dot. A solid crimson plate is louder than an animation, and it
    doesn't twitch in the corner of your eye while you're reading a table. */
+/* A status label, not an alarm. This used to be a solid pink block sitting
+   next to the league name, which made the least important thing on the page
+   the loudest — louder than the clock it was describing. Pink is now reserved
+   for the clock itself; here it shrinks to a single dot. */
 .live {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 3px 8px;
+  border: 1px solid var(--rule-2);
   border-radius: var(--r-sm);
-  background: var(--live);
-  color: var(--live-ink);
+  color: var(--fg-2);
   font-stretch: 88%;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
+}
+.live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
 }
 
 .locked {
@@ -965,7 +955,7 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 .seg button:last-child { border-right: 0; }
 .seg button:hover { color: var(--fg-2); background: var(--stock-2); }
 .seg button[aria-pressed='true'] {
-  background: var(--uv-pale);
+  background: var(--uv);
   color: var(--uv-ink);
 }
 
@@ -1207,3 +1197,33 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 @media (min-width: 940px) {
   .sticky-head { position: static; top: auto; }
 }
+
+/* ------------------------------------------------------------- standings ---
+   The top of the table gets a surface of its own. Two managers is two rows,
+   and two rows alone on a wide page read as an accident rather than a result.
+   -------------------------------------------------------------------------- */
+
+.leader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  background: var(--uv-block);
+  border: 1px solid var(--uv-line);
+  border-radius: var(--r);
+}
+.leader-name {
+  margin-top: 6px;
+  font-stretch: 82%;
+  font-size: clamp(26px, 4.4vw, 38px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+.leader-total { font-size: clamp(38px, 7vw, 54px); line-height: .9; }
+
+/* Standings and activity are a handful of columns; a narrower measure keeps
+   the team name and its total inside one glance. */
+.page.narrow { max-width: 720px; }

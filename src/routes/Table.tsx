@@ -57,7 +57,30 @@ export default function Table () {
 
       {rows === null ? <Loading rows={6} /> : (
         <>
-          <div>
+          {/* The leader, set as a block. A two-manager league is two rows in a
+              1440px page, which read as an accident rather than a standing;
+              giving the top of the table its own surface means the screen has
+              a subject however few managers there are. */}
+          {ranked[0] && (
+            <div className="leader">
+              <div>
+                <span className="eyebrow">
+                  {league.status === 'completed' ? 'Champion' : 'Leading'}
+                </span>
+                <h2 className="leader-name">{ranked[0].team_name}</h2>
+                <p className="tiny muted" style={{ marginTop: 4 }}>
+                  {ranked[0].manager_name}
+                  {tied && ' · level on points'}
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div className="figure leader-total">{ranked[0].total_points}</div>
+                <span className="eyebrow">Points</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-32">
             <div className="thead">
               <span style={{ width: 26 }}>#</span>
               <span className="grow">Team</span>
@@ -106,14 +129,6 @@ export default function Table () {
             </div>
           )}
 
-          {league.status === 'completed' && ranked[0] && (
-            <div className="slab green mt-32">
-              <h2 className="h2">{ranked[0].team_name}</h2>
-              <p className="small muted mt-8">
-                Champion · {ranked[0].manager_name} · {ranked[0].total_points} points
-              </p>
-            </div>
-          )}
         </>
       )}
 
