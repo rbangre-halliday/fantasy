@@ -51,11 +51,13 @@ async function main () {
   }
 
   const [a, b] = USERS
-  const leagueId = await rpc('create_league', a.token, { p_name: 'C Suite', p_team_name: a.team })
+  const MODE = process.env.DRAFT_MODE ?? 'live'
+  const leagueId = await rpc('create_league', a.token,
+    { p_name: 'C Suite', p_team_name: a.team, p_mode: MODE })
   const [{ invite_code: code }] = await (await fetch(
     `${U}/rest/v1/leagues?id=eq.${leagueId}&select=invite_code`, { headers: asUser(a.token) })).json()
   await rpc('join_league', b.token, { p_code: code, p_team_name: b.team })
-  console.log('league', leagueId, 'code', code)
+  console.log('league', leagueId, 'code', code, 'mode', MODE)
 
   await rpc('start_draft', a.token, { p_league: leagueId })
   console.log('draft started')
