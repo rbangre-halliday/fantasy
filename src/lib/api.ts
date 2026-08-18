@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type {
   Draft, DraftMode, DraftPick, Gameweek, League, LeaguePlayer, Member,
-  SquadPlayer, Standing, Trade, TradePlayerRow, Txn
+  Message, SquadPlayer, Standing, Trade, TradePlayerRow, Txn
 } from './types'
 
 /** Unwrap a PostgREST result, throwing the server's own message on failure. */
@@ -90,6 +90,19 @@ export const getTransactions = (leagueId: string, limit = 60) =>
       .order('created_at', { ascending: false })
       .limit(limit)
   )
+
+export const getMessages = (leagueId: string, limit = 200) =>
+  ok<Message[]>(
+    supabase.from('messages').select('*')
+      .eq('league_id', leagueId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+  )
+
+export const postMessage = (leagueId: string, body: string) =>
+  rpc('post_message', { p_league: leagueId, p_body: body }) as Promise<string>
+
+export const deleteMessage = (id: string) => rpc('delete_message', { p_message: id })
 
 export const currentGw = () => rpc('current_gw') as Promise<number>
 export const nextGw    = () => rpc('next_gw')    as Promise<number>

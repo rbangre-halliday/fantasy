@@ -249,12 +249,13 @@ export default function SignIn () {
  */
 function ProductShot () {
   const squad = [
-    { id: 1, name: 'Haaland',     club: 'MCI', position: 'FWD' as const },
-    { id: 2, name: 'Saka',        club: 'ARS', position: 'MID' as const },
-    { id: 3, name: 'B.Fernandes', club: 'MUN', position: 'MID' as const },
-    { id: 4, name: 'Gabriel',     club: 'ARS', position: 'DEF' as const },
-    { id: 5, name: 'Virgil',      club: 'LIV', position: 'DEF' as const },
-    { id: 6, name: 'Raya',        club: 'ARS', position: 'GK'  as const }
+    // Kit codes are the Premier League's own club ids, not FPL team ids.
+    { id: 1, name: 'Haaland',     club: 'MCI', position: 'FWD' as const, kit: 43 },
+    { id: 2, name: 'Saka',        club: 'ARS', position: 'MID' as const, kit: 3 },
+    { id: 3, name: 'B.Fernandes', club: 'MUN', position: 'MID' as const, kit: 1 },
+    { id: 4, name: 'Gabriel',     club: 'ARS', position: 'DEF' as const, kit: 3 },
+    { id: 5, name: 'Virgil',      club: 'LIV', position: 'DEF' as const, kit: 14 },
+    { id: 6, name: 'Raya',        club: 'ARS', position: 'GK'  as const, kit: 3 }
   ]
   // Enough rows that the board column stands as tall as the pitch beside it.
   const board = [

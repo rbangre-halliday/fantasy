@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useToast } from '../lib/toast'
 import type { Draft, Gameweek, League, Member, Trade } from '../lib/types'
-import { IconChevron, IconDraft, IconPlayers, IconTable, IconTeam, IconTrade, Loading } from './ui'
+import { IconChat, IconChevron, IconDraft, IconPlayers, IconTable, IconTeam, IconTrade, Loading } from './ui'
 
 interface LeagueCtx {
   league: League
@@ -119,6 +119,7 @@ export default function LeagueLayout () {
       ? [
           { to: `${base}/draft`, label: 'Draft', icon: <IconDraft />, live: true },
           { to: `${base}/team`, label: 'Squad', icon: <IconTeam /> },
+          { to: `${base}/chat`, label: 'Chat', icon: <IconChat /> },
           { to: `${base}/table`, label: 'Table', icon: <IconTable /> }
         ]
       : [
@@ -126,6 +127,7 @@ export default function LeagueLayout () {
           { to: `${base}/players`, label: 'Players', icon: <IconPlayers /> },
           { to: `${base}/trades`, label: 'Trades', icon: <IconTrade />, badge: pendingForMe.length },
           { to: `${base}/table`, label: 'Table', icon: <IconTable /> },
+          { to: `${base}/chat`, label: 'Chat', icon: <IconChat /> },
           { to: `${base}/draft`, label: 'Draft', icon: <IconDraft /> }
         ]
 

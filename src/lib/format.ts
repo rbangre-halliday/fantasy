@@ -65,3 +65,19 @@ export function xiProblem (starters: SquadPlayer[]): string | null {
   }
   return null
 }
+
+/**
+ * "LIV (H)" — the opponent and whether it is at home.
+ *
+ * Short on purpose: this sits in a table row beside a name and two numbers, and
+ * the useful part is the three letters. The gameweek is only worth showing when
+ * it is not the one being looked at.
+ */
+export function fixtureLabel (
+  fx: { opp: string; home: boolean; gw: number } | undefined,
+  showGw?: number
+): string {
+  if (!fx) return '—'
+  const base = `${fx.opp} (${fx.home ? 'H' : 'A'})`
+  return showGw != null && fx.gw !== showGw ? `${base} · GW${fx.gw}` : base
+}

@@ -15,6 +15,7 @@ import Players from './routes/Players'
 import Trades from './routes/Trades'
 import Table from './routes/Table'
 import Commissioner from './routes/Commissioner'
+import ChatPage from './routes/ChatPage'
 
 function Gate ({ children }: { children: JSX.Element }) {
   const { session, loading } = useAuth()
@@ -43,6 +44,7 @@ export default function App () {
               <Route path="players" element={<Players />} />
               <Route path="trades" element={<Trades />} />
               <Route path="table" element={<Table />} />
+              <Route path="chat" element={<ChatPage />} />
               <Route path="commissioner" element={<Commissioner />} />
             </Route>
 

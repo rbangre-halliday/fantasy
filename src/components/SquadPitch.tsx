@@ -6,7 +6,22 @@ export interface PitchPlayer {
   name: string
   club: string | null
   position: Position
+  /**
+   * The club's Premier League code, which is what its kit image is filed
+   * under. Optional: without it the slot simply has no shirt, which is how it
+   * looked before.
+   */
+  kit?: number
 }
+
+/**
+ * Club kits, from FPL's own asset path. This is how FPL solves the imagery
+ * problem and it is the right answer: a kit belongs to a club, so it cannot go
+ * stale the way a player photo does when he transfers. Goalkeepers wear a
+ * different shirt, hence the suffix.
+ */
+const kitUrl = (code: number, gk: boolean) =>
+  `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${code}${gk ? '_1' : ''}-66.png`
 
 /**
  * The squad as a shape rather than a list: 2/5/5/4 laid out on a pitch, empty
@@ -91,15 +106,19 @@ export default function SquadPitch ({
                     aria-pressed={isSel}
                     title={`${p.name} · ${p.club ?? ''}`}
                     onClick={() => onSelect(p.id)}>
+                    {p.kit && <img className="kit" src={kitUrl(p.kit, pos === 'GK')}
+                      alt="" width={22} height={22} loading="lazy" decoding="async" />}
                     <span className="slot-name">{p.name}</span>
                     {pts !== undefined
                       ? <span className="slot-pts num">{pts}</span>
-                      : !compact && <span className="slot-club">{p.club ?? ''}</span>}
+                      : (!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
                   </button>
                 ) : (
                   <div className={cls} key={p.id} title={`${p.name} · ${p.club ?? ''}`}>
+                    {p.kit && <img className="kit" src={kitUrl(p.kit, pos === 'GK')}
+                      alt="" width={22} height={22} loading="lazy" decoding="async" />}
                     <span className="slot-name">{p.name}</span>
-                    {!compact && <span className="slot-club">{p.club ?? ''}</span>}
+                    {(!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
                   </div>
                 )
               })}
@@ -164,7 +183,7 @@ export default function SquadPitch ({
           flex: 1 1 0;
           min-width: 0;
           max-width: 92px;
-          height: ${compact ? '42px' : '48px'};
+          height: ${compact ? '54px' : '58px'};
           padding: 0 7px;
           display: flex;
           flex-direction: column;
@@ -229,6 +248,7 @@ export default function SquadPitch ({
           text-transform: uppercase;
           color: #B79BC6;
         }
+        .kit { display: block; margin-bottom: 1px; object-fit: contain; }
         .slot-dot {
           width: 4px;
           height: 4px;

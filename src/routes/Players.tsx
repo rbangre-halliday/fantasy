@@ -6,6 +6,7 @@ import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconLock, Loading, Notice, PageHead, PlayerPortrait, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
 import { useCrests } from '../lib/images'
+import { fixtureLabel } from '../lib/format'
 import { POSITIONS } from '../lib/types'
 import type { LeaguePlayer, Position } from '../lib/types'
 
@@ -13,7 +14,7 @@ type Filter = 'ALL' | Position
 type Scope = 'free' | 'all'
 
 export default function Players () {
-  const { league, me, refresh } = useLeague()
+  const { league, me, gameweeks, refresh } = useLeague()
   const { toast, fail } = useToast()
   const crests = useCrests()
 
@@ -57,13 +58,18 @@ export default function Players () {
     ).slice(0, 200)
   }, [players, filter, scope, query])
 
+  // See DraftRoom: pre-season, current_season_points is a copy of last
+  // season's, so the honest column to show is the one that is actually true.
+  const seasonUnderway = useMemo(() => gameweeks.some(g => g.finished), [gameweeks])
+
   const freeCount = useMemo(
     () => (players ?? []).filter(p => !p.owner_member_id).length, [players])
 
   const mySquad = useMemo(
     () => mine.map(p => ({
-      id: p.id, name: p.web_name, club: p.club_short, position: p.position
-    })), [mine])
+      id: p.id, name: p.web_name, club: p.club_short, position: p.position,
+      kit: crests.teamCode.get(p.team_id ?? -1)
+    })), [mine, crests])
 
   // Squad size and shape are fixed, so signing a midfielder means dropping one.
   const droppable = useMemo(
@@ -123,8 +129,11 @@ export default function Players () {
         <div className="mt-24">
           <div className="thead">
             <span className="grow">Player</span>
-            <span style={{ width: 84 }}>Owner</span>
-            <span style={{ width: 44, textAlign: 'right' }}>Pts</span>
+            <span style={{ width: 62 }}>Next</span>
+            <span style={{ width: 76 }}>Owner</span>
+            <span style={{ width: 40, textAlign: 'right' }}>
+              {seasonUnderway ? 'Pts' : '25/26'}
+            </span>
           </div>
           {/* Six hundred players is a 14,000px page if the list is left to
               grow. It scrolls inside its own pane instead. */}
@@ -142,15 +151,18 @@ export default function Players () {
                       <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
                       <span className="row gap-6 tiny muted">
                         <span className="club">{p.club_short ?? '—'}</span>
-                        <span>· {p.prev_season_points} last season</span>
+                        {seasonUnderway && <span>· {p.prev_season_points} last season</span>}
                         {p.locked && <span className="locked"><IconLock /> Locked</span>}
                       </span>
                     </span>
-                    <span className="tiny truncate" style={{ width: 84, color: free ? 'var(--green)' : 'var(--ink-3)' }}>
+                    <span className="fixture" style={{ width: 62 }}>
+                      {fixtureLabel(crests.nextFixture.get(p.team_id ?? -1))}
+                    </span>
+                    <span className="tiny truncate" style={{ width: 76, color: free ? 'var(--green)' : 'var(--ink-3)' }}>
                       {free ? 'Free' : p.owner_member_id === me.id ? 'You' : p.owner_team_name}
                     </span>
-                    <span className="num small" style={{ width: 44, textAlign: 'right', fontWeight: 600 }}>
-                      {p.current_season_points}
+                    <span className="num small" style={{ width: 40, textAlign: 'right', fontWeight: 600 }}>
+                      {seasonUnderway ? p.current_season_points : p.prev_season_points}
                     </span>
                   </button>
                 </li>
@@ -190,7 +202,9 @@ export default function Players () {
             <div>
               <div className="row gap-8"><PosChip pos={signing.position} /></div>
               <div className="h3" style={{ marginTop: 6 }}>{signing.first_name} {signing.second_name}</div>
-              <div className="club">{signing.club} · {signing.current_season_points} pts this season</div>
+              <div className="club">
+                {signing.club} · next {fixtureLabel(crests.nextFixture.get(signing.team_id ?? -1))}
+              </div>
             </div>
           </div>
 

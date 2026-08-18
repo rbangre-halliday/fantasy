@@ -8,14 +8,14 @@ import SquadPitch from '../components/SquadPitch'
 import DraftBoard from '../components/DraftBoard'
 import { useCrests } from '../lib/images'
 import { useShortlist } from '../lib/shortlist'
-import { clock } from '../lib/format'
+import { clock, fixtureLabel } from '../lib/format'
 import { POSITIONS, SQUAD_CAPS } from '../lib/types'
 import type { DraftPick, LeaguePlayer, Position } from '../lib/types'
 
 type Filter = 'ALL' | 'SHORT' | Position
 
 export default function DraftRoom () {
-  const { league, members, me, draft, isCommissioner, refresh } = useLeague()
+  const { league, members, me, draft, gameweeks, isCommissioner, refresh } = useLeague()
   const { toast, fail } = useToast()
   const crests = useCrests()
 
@@ -118,6 +118,18 @@ export default function DraftRoom () {
   const myTotal = POSITIONS.reduce((n, p) => n + myCounts[p], 0)
 
   /**
+   * Has the season actually started?
+   *
+   * Not "has anyone got points", which was the first guess and was wrong: FPL's
+   * total_points still holds last season's figure until the new one kicks off,
+   * so every player showed an identical "last" and "this", and two columns of
+   * the same number read as a bug rather than as data. Whether a gameweek has
+   * finished is the authoritative signal, and it comes from FPL directly.
+   */
+  const seasonUnderway = useMemo(
+    () => gameweeks.some(g => g.finished), [gameweeks])
+
+  /**
    * How many picks until it's your turn again.
    *
    * A snake draft makes this genuinely hard to work out in your head — the
@@ -152,8 +164,11 @@ export default function DraftRoom () {
   const mySquad = useMemo(
     () => (players ?? [])
       .filter(p => p.owner_member_id === me.id)
-      .map(p => ({ id: p.id, name: p.web_name, club: p.club_short, position: p.position })),
-    [players, me.id])
+      .map(p => ({
+        id: p.id, name: p.web_name, club: p.club_short, position: p.position,
+        kit: crests.teamCode.get(p.team_id ?? -1)
+      })),
+    [players, me.id, crests])
 
   const visible = useMemo(() => {
     if (!players) return []
@@ -346,8 +361,9 @@ export default function DraftRoom () {
               <>
                 <div className="thead mt-16" style={{ paddingLeft: 34 }}>
                   <span className="grow">Player</span>
-                  <span style={{ width: 46, textAlign: 'right' }}>Last</span>
-                  <span style={{ width: 46, textAlign: 'right' }}>This</span>
+                  <span style={{ width: 62 }}>Next</span>
+                  <span style={{ width: 42, textAlign: 'right' }}>Last</span>
+                  {seasonUnderway && <span style={{ width: 42, textAlign: 'right' }}>This</span>}
                 </div>
                 {/* The board scrolls inside itself rather than making the page
                     thousands of pixels tall. */}
@@ -373,12 +389,17 @@ export default function DraftRoom () {
                             <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
                             <span className="club">{p.club_short ?? '—'}</span>
                           </span>
-                          <span className="num small" style={{ width: 46, textAlign: 'right' }}>
+                          <span className="fixture" style={{ width: 62 }}>
+                            {fixtureLabel(crests.nextFixture.get(p.team_id ?? -1))}
+                          </span>
+                          <span className="num small" style={{ width: 42, textAlign: 'right' }}>
                             {p.prev_season_points}
                           </span>
-                          <span className="num small muted" style={{ width: 46, textAlign: 'right' }}>
-                            {p.current_season_points}
-                          </span>
+                          {seasonUnderway && (
+                            <span className="num small muted" style={{ width: 42, textAlign: 'right' }}>
+                              {p.current_season_points}
+                            </span>
+                          )}
                         </button>
                       </li>
                     )
@@ -451,14 +472,22 @@ export default function DraftRoom () {
               <div className="club">{confirming.club}</div>
             </div>
           </div>
-          <div className="row gap-24 mt-24">
+          <div className="row gap-24 mt-24 wrap">
             <div>
               <div className="eyebrow">Last season</div>
               <div className="num h2">{confirming.prev_season_points}</div>
             </div>
+            {seasonUnderway && (
+              <div>
+                <div className="eyebrow">This season</div>
+                <div className="num h2">{confirming.current_season_points}</div>
+              </div>
+            )}
             <div>
-              <div className="eyebrow">This season</div>
-              <div className="num h2">{confirming.current_season_points}</div>
+              <div className="eyebrow">Next up</div>
+              <div className="h2">
+                {fixtureLabel(crests.nextFixture.get(confirming.team_id ?? -1))}
+              </div>
             </div>
           </div>
           {confirming.news && (

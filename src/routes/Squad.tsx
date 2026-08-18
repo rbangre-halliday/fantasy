@@ -6,7 +6,7 @@ import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, Segmented } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
 import { useCrests } from '../lib/images'
-import { availability, kickoffLabel, xiProblem } from '../lib/format'
+import { availability, fixtureLabel, kickoffLabel, xiProblem } from '../lib/format'
 import { XI_SHAPE } from '../lib/types'
 import type { SquadPlayer } from '../lib/types'
 
@@ -112,6 +112,8 @@ export default function Squad () {
     !p.locked
 
   const crestOf = (p: SquadPlayer) => crests.shortCode.get(p.club_short ?? '')
+  const fixtureOf = (p: SquadPlayer) =>
+    crests.nextFixture.get(crests.idByShort.get(p.club_short ?? '') ?? -1)
 
   const gwOptions = [
     { value: String(currentGw), label: `GW ${currentGw}` },
@@ -173,7 +175,8 @@ export default function Squad () {
               <SquadPitch
                 capacity={XI_SHAPE}
                 players={starters.map(p => ({
-                  id: p.player_id, name: p.web_name, club: p.club_short, position: p.position
+                  id: p.player_id, name: p.web_name, club: p.club_short,
+                  position: p.position, kit: crestOf(p)
                 }))}
                 onSelect={isMine ? id => {
                   const p = squad!.find(x => x.player_id === id)
@@ -199,7 +202,7 @@ export default function Squad () {
                 <Eyebrow>Bench · in substitution order</Eyebrow>
                 <ul className="list">
                   {bench.map((p, i) => (
-                    <PlayerRow key={p.player_id} p={p} gw={gw} crest={crestOf(p)}
+                    <PlayerRow key={p.player_id} p={p} gw={gw} crest={crestOf(p)} fixture={fixtureOf(p)}
                       lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
                       selected={picked === p.player_id}
                       highlight={canSwapWith(p)}
@@ -246,10 +249,11 @@ export default function Squad () {
 }
 
 function PlayerRow ({
-  p, lead, trailing, selected, highlight, interactive, onTap, crest
+  p, lead, trailing, selected, highlight, interactive, onTap, crest, fixture
 }: {
   p: SquadPlayer
   crest?: number
+  fixture?: { opp: string; home: boolean; gw: number }
   gw: number
   lead?: React.ReactNode
   trailing?: React.ReactNode
@@ -280,6 +284,7 @@ function PlayerRow ({
             {p.locked
               ? <span className="locked"><IconLock /> {p.minutes > 0 ? `${p.minutes}'` : 'Kicked off'}</span>
               : <span>{kickoffLabel(p.kickoff)}</span>}
+            {fixture && <span className="fixture">{fixtureLabel(fixture)}</span>}
             {flag && <span style={{ color: flag.tone }}>· {flag.label}</span>}
           </span>
         </span>

@@ -138,3 +138,11 @@ export interface Gameweek {
   is_next: boolean
   finished: boolean
 }
+
+export interface Message {
+  id: string
+  league_id: string
+  member_id: string
+  body: string
+  created_at: string
+}
