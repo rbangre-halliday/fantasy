@@ -5,6 +5,7 @@ import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconStar, Loading, Notice, PlayerPortrait, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
+import DraftBoard from '../components/DraftBoard'
 import { useCrests } from '../lib/images'
 import { useShortlist } from '../lib/shortlist'
 import { clock } from '../lib/format'
@@ -28,6 +29,7 @@ export default function DraftRoom () {
   const [now, setNow] = useState(() => Date.now())
   const tickGuard = useRef(0)
   const shortlist = useShortlist(league.id)
+  const isAsync = league.draft_mode === 'async'
 
   const nameOf = useMemo(
     () => new Map(members.map(m => [m.id, m.team_name])),
@@ -43,7 +45,10 @@ export default function DraftRoom () {
   }, [league.id])
 
   useEffect(() => { reload().catch(fail) }, [reload, fail])
-  useEffect(() => { api.clockOffset().then(setOffset).catch(() => setOffset(0)) }, [])
+  useEffect(() => {
+    if (isAsync) return
+    api.clockOffset().then(setOffset).catch(() => setOffset(0))
+  }, [isAsync])
 
   // Live pick feed. A new pick only needs a local patch, so the 600-row player
   // list is fetched once per session rather than once per pick.
@@ -67,9 +72,11 @@ export default function DraftRoom () {
 
   // One second heartbeat for the clock display.
   useEffect(() => {
+    // An async draft has nothing counting down, so there is nothing to animate.
+    if (isAsync) return
     const id = setInterval(() => setNow(Date.now()), 250)
     return () => clearInterval(id)
-  }, [])
+  }, [isAsync])
 
   // Nobody watches a draft in a focused tab for two hours. Missing your pick
   // costs you the player — the server auto-picks — so the turn has to be able
@@ -78,15 +85,17 @@ export default function DraftRoom () {
   useEffect(() => {
     const mine = draft?.status === 'running' && draft.current_member_id === me.id
     const base = 'Gaffer — Fantasy Premier League'
-    document.title = mine ? '⏱ Your pick — Gaffer' : base
+    document.title = mine
+      ? (league.draft_mode === 'async' ? '● Your pick — Gaffer' : '⏱ Your pick — Gaffer')
+      : base
     return () => { document.title = base }
-  }, [draft?.status, draft?.current_member_id, me.id])
+  }, [draft?.status, draft?.current_member_id, me.id, league.draft_mode])
 
   const deadline = draft?.pick_deadline ? new Date(draft.pick_deadline).getTime() : null
   const remaining = deadline === null ? null : deadline - (now + offset)
   const running = draft?.status === 'running'
   const myTurn = running && draft?.current_member_id === me.id
-  const expired = running && remaining !== null && remaining < -900
+  const expired = !isAsync && running && remaining !== null && remaining < -900
 
   // When the clock runs out, whoever is watching asks the server to advance.
   // The server re-checks its own clock, so an early or duplicated call is a
@@ -220,10 +229,13 @@ export default function DraftRoom () {
           <div className="between wrap gap-16">
             <div style={{ minWidth: 0 }}>
               <h1 className="h2 truncate">
-                {myTurn ? 'You’re on the clock' : onClockTeam ?? '—'}
+                {myTurn
+                  ? (isAsync ? 'Your pick' : 'You’re on the clock')
+                  : onClockTeam ?? '—'}
               </h1>
               <div className="small muted mt-8" data-testid="draft-progress">
                 Round {draft.current_round} · pick {draft.current_pick} of {totalPicks}
+                {isAsync && !myTurn && onClockTeam ? ` · waiting on ${onClockTeam}` : ''}
                 {draft.status === 'paused'
                   ? ' · paused by the commissioner'
                   // Guarded above zero on purpose: the countdown is derived
@@ -252,7 +264,7 @@ export default function DraftRoom () {
               )}
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right' }} hidden={isAsync}>
               {/* Test hook: the clock and the pick counter are the two things a
                   UI run has to read, and both were being matched by class until
                   a restyle moved those classes elsewhere. */}
@@ -276,7 +288,16 @@ export default function DraftRoom () {
         {isCommissioner && !complete && (
           <div className="row gap-8 wrap mt-24"
             style={{ borderTop: '1px solid rgba(255,255,255,.12)', paddingTop: 16 }}>
-            {draft.status === 'running'
+            {isAsync ? (
+              // Without a clock nobody is forced to pick, so the commissioner
+              // needs a way to move a draft that has stalled on one person.
+              <button className="btn sm ghost" disabled={busy}
+                onClick={() => {
+                  if (confirm(`Take the best available player for ${onClockTeam}?`)) {
+                    void commish(() => api.forcePick(league.id), 'Pick taken')
+                  }
+                }}>Pick for {onClockTeam}</button>
+            ) : draft.status === 'running'
               ? <button className="btn sm ghost" disabled={busy}
                   onClick={() => void commish(() => api.pauseDraft(league.id), 'Draft paused')}>Pause</button>
               : <button className="btn sm ghost" disabled={busy}
@@ -391,39 +412,25 @@ export default function DraftRoom () {
               ))}
             </div>
 
-            <div className="mt-32" />
-            <Eyebrow>Picks</Eyebrow>
-            {picks.length === 0 ? (
-              <div className="empty">No picks yet.</div>
-            ) : (
-              <ul className="list scroll-pane" style={{ maxHeight: 360 }}>
-                {[...picks].reverse().slice(0, 40).map((pk, i) => {
-                  const player = players?.find(p => p.id === pk.player_id)
-                  return (
-                    // The newest pick stays marked until it is superseded.
-                    // Picks arrive over the wire while you are reading the
-                    // board, and a row that silently appears at the top of a
-                    // list of forty identical rows is a change nobody sees.
-                    <li key={pk.id} className={`list-row${i === 0 ? ' is-latest' : ''}`}>
-                      <span className="num tiny muted" style={{ width: 34 }}>
-                        {pk.round}.{String(((pk.pick_number - 1) % members.length) + 1)}
-                      </span>
-                      {player && <PosChip pos={player.position} />}
-                      <span className="grow" style={{ minWidth: 0 }}>
-                        <span className="name truncate" style={{ display: 'block' }}>
-                          {player?.web_name ?? `#${pk.player_id}`}
-                        </span>
-                        <span className="tiny muted truncate" style={{ display: 'block' }}>
-                          {nameOf.get(pk.member_id)}{pk.auto_pick && ' · auto'}
-                        </span>
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
           </section>
+
         </div>
+
+        {/* ---- the board, full width -----------------------------------
+            The picks used to be a reverse-chronological list in the side
+            column, which only ever showed the last handful. The grid shows
+            the whole draft: who has what, and where the snake turns. */}
+        <section className="mt-32">
+          <Eyebrow>The board</Eyebrow>
+          <DraftBoard
+            members={members}
+            picks={picks}
+            players={players}
+            currentPick={draft.status === 'complete' ? -1 : draft.current_pick}
+            totalRounds={draft.total_rounds}
+            meId={me.id}
+          />
+        </section>
       </div>
 
       {confirming && (

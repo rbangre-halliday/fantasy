@@ -212,11 +212,12 @@ export default function SquadPitch ({
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
-          /* Break at spaces and hyphens only. Wrapping anywhere split Semenyo
-             into "Semeny / o", which is worse than the truncation it replaced;
-             a long single name shrinks instead. */
-          overflow-wrap: normal;
-          word-break: keep-all;
+          /* break-word, not anywhere: it breaks a word only when that word
+             cannot fit a line by itself, where wrapping anywhere also shrank the
+             slot's min-content width and split Semenyo into "Semeny / o".
+             Names with a space or hyphen still wrap at the natural place. */
+          overflow-wrap: break-word;
+          word-break: normal;
           color: var(--fg);
         }
         /* Tinted from the block it sits on, never grey — grey on a coloured

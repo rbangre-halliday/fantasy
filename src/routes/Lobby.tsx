@@ -74,6 +74,16 @@ export default function Lobby () {
       </div>
 
       <div className="mt-40">
+        <div className="row gap-8 wrap" style={{ marginBottom: 14 }}>
+          <span className="status-tag">
+            {league.draft_mode === 'async' ? 'Take your time draft' : 'Live draft'}
+          </span>
+          <span className="tiny muted">
+            {league.draft_mode === 'async'
+              ? 'No clock — pick when it is your turn'
+              : `${Math.round(league.pick_seconds / 60)} minutes a pick`}
+          </span>
+        </div>
         <Eyebrow>Managers · {members.length} of {league.max_managers}</Eyebrow>
         <ul className="list">
           {members.map(m => (
@@ -108,7 +118,10 @@ export default function Lobby () {
             {!enough && <Notice kind="warn">You need at least two managers before the draft can start.</Notice>}
             <Notice>
               Starting the draft randomises the pick order and locks the league —
-              nobody can join after that.
+              nobody can join after that.{' '}
+              {league.draft_mode === 'async'
+                ? 'There’s no clock: each manager picks in turn, whenever they get to it.'
+                : 'Everyone needs to be here — two minutes a pick, and the clock picks for anyone who misses their turn.'}
             </Notice>
             <button className="btn lg block" disabled={!enough || busy}
               onClick={() => void run(() => api.startDraft(league.id))

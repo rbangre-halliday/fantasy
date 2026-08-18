@@ -1,5 +1,7 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD'
 export type LeagueStatus = 'lobby' | 'drafting' | 'active' | 'completed'
+/** live = two-minute clock with auto-pick; async = turn-based, no deadline. */
+export type DraftMode = 'live' | 'async'
 export type DraftStatus = 'pending' | 'running' | 'paused' | 'complete'
 export type LineupStatus = 'starter' | 'substitute'
 export type TradeStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled'
@@ -19,6 +21,7 @@ export interface League {
   scoring_start_gw: number
   max_managers: number
   pick_seconds: number
+  draft_mode: DraftMode
   created_at: string
 }
 

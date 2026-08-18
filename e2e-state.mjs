@@ -102,10 +102,14 @@ await step('the drafted player is gone from the board', async () => {
 
 await step("the other manager sees the pick without reloading", async () => {
   await them.page.waitForTimeout(2500)
-  const feed = await them.page.$$eval('.picks-list li, .list li', e => e.map(x => x.textContent))
-  const seen = feed.some(t => t && t.includes(pickedName))
-  if (!seen) throw new Error(`${pickedName} not in the other browser's feed`)
-  return 'propagated'
+  // Reads the board rather than a feed: the reverse-chronological list this
+  // used to check was replaced by the grid.
+  const onBoard = await them.page.$$eval('.board-cell.is-taken .board-name',
+    e => e.map(x => x.textContent.trim()))
+  if (!onBoard.includes(pickedName)) {
+    throw new Error(`${pickedName} not on the other browser's board (${onBoard.length} cells filled)`)
+  }
+  return `on their board, ${onBoard.length} picks shown`
 })
 
 await step('exactly one manager is on the clock', async () => {

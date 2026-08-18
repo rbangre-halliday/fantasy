@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import type {
-  Draft, DraftPick, Gameweek, League, LeaguePlayer, Member,
+  Draft, DraftMode, DraftPick, Gameweek, League, LeaguePlayer, Member,
   SquadPlayer, Standing, Trade, TradePlayerRow, Txn
 } from './types'
 
@@ -104,8 +104,14 @@ export async function clockOffset (): Promise<number> {
 
 // ----------------------------------------------------------------- writes --
 
-export const createLeague = (name: string, teamName: string) =>
-  rpc('create_league', { p_name: name, p_team_name: teamName }) as Promise<string>
+export const createLeague = (name: string, teamName: string, mode: DraftMode) =>
+  rpc('create_league', {
+    p_name: name, p_team_name: teamName, p_mode: mode
+  }) as Promise<string>
+
+/** Commissioner nudge for an async draft: take the pick for whoever is holding
+    everyone up. In a live draft the clock does this. */
+export const forcePick = (leagueId: string) => rpc('force_pick', { p_league: leagueId })
 
 export const joinLeague = (code: string, teamName: string) =>
   rpc('join_league', { p_code: code, p_team_name: teamName }) as Promise<string>
