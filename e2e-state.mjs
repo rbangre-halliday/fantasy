@@ -205,6 +205,22 @@ await step('squad screen shows no phantom players', async () => {
   return `${filled.length} named slots`
 })
 
+await step('no name in the pitch is broken mid-word', async () => {
+  // "Semenyo" rendered as "Semeny / o" once, because the wrap rule allowed a
+  // break at any character. Two lines is fine; a split word is not.
+  const bad = await me.page.$$eval('.slot.filled .slot-name', els =>
+    els.map(e => ({
+      text: e.textContent.trim(),
+      lines: Math.round(e.getBoundingClientRect().height /
+        parseFloat(getComputedStyle(e).lineHeight || '12'))
+    }))
+    // a single word rendered over two lines can only have been split
+    .filter(x => x.lines > 1 && !/[\s-]/.test(x.text))
+    .map(x => x.text))
+  if (bad.length) throw new Error(`split mid-word: ${bad.join(', ')}`)
+  return 'no splits'
+})
+
 await step('no name in the pitch is truncated to nothing', async () => {
   const bad = await me.page.$$eval('.slot.filled .slot-name', els =>
     els.map(e => e.textContent.trim())

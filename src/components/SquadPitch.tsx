@@ -202,9 +202,9 @@ export default function SquadPitch ({
            clipped to "Mathe…" is not a player anyone can identify, and the
            slot has the height to spare once the club line is optional. */
         .slot-name {
-          font-size: ${compact ? '10.5px' : '11.5px'};
+          font-size: ${compact ? '10px' : '11px'};
           font-weight: 650;
-          line-height: 1.08;
+          line-height: 1.06;
           letter-spacing: -.02em;
           max-width: 100%;
           text-align: center;
@@ -212,7 +212,11 @@ export default function SquadPitch ({
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
-          overflow-wrap: anywhere;
+          /* Break at spaces and hyphens only. Wrapping anywhere split Semenyo
+             into "Semeny / o", which is worse than the truncation it replaced;
+             a long single name shrinks instead. */
+          overflow-wrap: normal;
+          word-break: keep-all;
           color: var(--fg);
         }
         /* Tinted from the block it sits on, never grey — grey on a coloured
