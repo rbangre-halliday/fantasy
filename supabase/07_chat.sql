@@ -84,3 +84,12 @@ grant execute on function delete_message(uuid) to authenticated;
 do $$ begin
   execute 'alter publication supabase_realtime add table messages';
 exception when duplicate_object then null; end $$;
+
+-- ---------------------------------------------------------------------------
+-- A DELETE arrives over realtime carrying only the *old* row, and by default
+-- that is just the primary key. Both the read policy and the client's
+-- league_id filter need league_id to be in it, so without this a deletion
+-- reaches nobody else's screen: the author saw it go (they refetch), everyone
+-- else kept looking at a message that no longer existed.
+-- ---------------------------------------------------------------------------
+alter table messages replica identity full;
