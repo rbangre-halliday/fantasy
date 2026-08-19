@@ -178,6 +178,21 @@ const SECTIONS: Section[] = [
     ]
   },
   {
+    id: 'predictions',
+    nav: 'Predictions',
+    title: 'Table predictions',
+    lede: 'One guess a season, made before a ball is kicked: the twenty clubs in the order you think the real Premier League will finish. It pays a bonus on top of your squad’s points.',
+    clauses: [
+      { text: <><b>Order all twenty clubs</b> on the Predict tab. Your order saves as you go.</> },
+      no(<><b>It locks at the first kickoff of your league’s first scoring gameweek</b> — the same moment the season starts counting. After that it can never be changed.</>),
+      { text: <><b>Nobody can see your order until then.</b> Rivals see only whether you’ve entered; the picks are revealed together when the deadline passes.</> },
+      { text: <><b>Your error is the sum of |predicted − actual| across the twenty clubs</b>, against the live table. Lower is better, and it moves every week as the real table does.</> },
+      { text: <><b>A perfect table is worth 100 bonus points; a random shuffle is worth nothing.</b> A random order averages 133 out, so that is the zero point and the payout runs evenly from there up to perfect: <i>100 × (1 − error ÷ 133)</i>, never below zero.</> },
+      { text: <><b>The bonus counts in the league table</b> and updates all season. The table shows it beside your squad points rather than folded in silently.</> },
+      no(<><b>Miss the deadline and you score no bonus.</b> There’s no late entry.</>)
+    ]
+  },
+  {
     id: 'scoring',
     nav: 'Scoring',
     title: 'Scoring and the table',

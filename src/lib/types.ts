@@ -98,8 +98,50 @@ export interface Standing {
   user_id: string
   team_name: string
   manager_name: string
+  /** Points from the squad alone. */
+  squad_points: number
+  /** The table-prediction bonus, already included in total_points. */
+  bonus_points: number
   total_points: number
   gw_points: number
+}
+
+/** A row of the real Premier League table, from the epl_table view. */
+export interface TableTeam {
+  team_id: number
+  name: string
+  short_name: string
+  code: number | null
+  played: number
+  points: number
+  goal_diff: number
+  scored: number
+  position: number
+}
+
+/** One club in a manager's predicted order, beside where it actually sits. */
+export interface PredictionRow {
+  team_id: number
+  name: string
+  short_name: string
+  code: number | null
+  predicted_pos: number
+  actual_pos: number
+  played: number
+  points: number
+  /** predicted - actual: negative means the club is doing better than you said. */
+  delta: number
+}
+
+/** Row shape of league_predictions(): how everyone's guess is going. */
+export interface PredictionStanding {
+  member_id: string
+  team_name: string
+  manager_name: string
+  submitted: boolean
+  error: number | null
+  bonus: number
+  revealed: boolean
 }
 
 export interface Trade {

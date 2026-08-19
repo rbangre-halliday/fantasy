@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useToast } from '../lib/toast'
 import type { Draft, Gameweek, League, Member, Trade } from '../lib/types'
-import { IconChat, IconChevron, IconDraft, IconPlayers, IconTable, IconTeam, IconTrade, Loading } from './ui'
+import { IconChat, IconChevron, IconDraft, IconPlayers, IconPredict, IconTable, IconTeam, IconTrade, Loading } from './ui'
 
 interface LeagueCtx {
   league: League
@@ -113,12 +113,19 @@ export default function LeagueLayout () {
   const drafting = league.status === 'drafting'
   const preDraft = league.status === 'lobby'
 
+  // Predictions are made before a ball is kicked, so the tab has to exist from
+  // the lobby onwards — a screen that only appears once the draft is done is a
+  // screen whose deadline has already passed.
   const tabs = preDraft
-    ? [{ to: base, label: 'Lobby', icon: <IconDraft />, end: true }]
+    ? [
+        { to: base, label: 'Lobby', icon: <IconDraft />, end: true },
+        { to: `${base}/predict`, label: 'Predict', icon: <IconPredict /> }
+      ]
     : drafting
       ? [
           { to: `${base}/draft`, label: 'Draft', icon: <IconDraft />, live: true },
           { to: `${base}/team`, label: 'Squad', icon: <IconTeam /> },
+          { to: `${base}/predict`, label: 'Predict', icon: <IconPredict /> },
           { to: `${base}/chat`, label: 'Chat', icon: <IconChat /> },
           { to: `${base}/table`, label: 'Table', icon: <IconTable /> }
         ]
@@ -127,6 +134,7 @@ export default function LeagueLayout () {
           { to: `${base}/players`, label: 'Players', icon: <IconPlayers /> },
           { to: `${base}/trades`, label: 'Trades', icon: <IconTrade />, badge: pendingForMe.length },
           { to: `${base}/table`, label: 'Table', icon: <IconTable /> },
+          { to: `${base}/predict`, label: 'Predict', icon: <IconPredict /> },
           { to: `${base}/chat`, label: 'Chat', icon: <IconChat /> },
           { to: `${base}/draft`, label: 'Draft', icon: <IconDraft /> }
         ]

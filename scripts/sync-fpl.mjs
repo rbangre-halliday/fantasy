@@ -117,7 +117,11 @@ async function main () {
     home_team: f.team_h,
     away_team: f.team_a,
     started: !!f.started,
-    finished: !!f.finished
+    finished: !!f.finished,
+    // The result itself. FPL sends these on the same payload; nothing else
+    // publishes the league table, so this is what predictions are scored on.
+    home_score: f.team_h_score,
+    away_score: f.team_a_score
   })), 'id')
 
   // ---- gameweek points -----------------------------------------------------

@@ -16,6 +16,7 @@ import Trades from './routes/Trades'
 import Table from './routes/Table'
 import Commissioner from './routes/Commissioner'
 import ChatPage from './routes/ChatPage'
+import Predict from './routes/Predict'
 import Rules from './routes/Rules'
 
 function Gate ({ children }: { children: JSX.Element }) {
@@ -48,6 +49,7 @@ export default function App () {
               <Route path="players" element={<Players />} />
               <Route path="trades" element={<Trades />} />
               <Route path="table" element={<Table />} />
+              <Route path="predict" element={<Predict />} />
               <Route path="chat" element={<ChatPage />} />
               <Route path="commissioner" element={<Commissioner />} />
             </Route>

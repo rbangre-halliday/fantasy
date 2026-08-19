@@ -263,6 +263,14 @@ export const IconTrade = () => (
 export const IconTable = () => (
   <svg viewBox="0 0 24 24" {...stroke}><path d="M4 6h16M4 12h16M4 18h16M9 4v16" /></svg>
 )
+/* A ranked list: three rows with their order marked, so it reads as a table
+   someone has *arranged* rather than the plain grid IconTable draws. */
+export const IconPredict = () => (
+  <svg viewBox="0 0 24 24" {...stroke}>
+    <path d="M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h10" />
+  </svg>
+)
+
 export const IconStar = ({ filled }: { filled?: boolean }) => (
   <svg viewBox="0 0 24 24" width="15" height="15"
     fill={filled ? 'currentColor' : 'none'}

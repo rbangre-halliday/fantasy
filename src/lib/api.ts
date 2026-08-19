@@ -1,7 +1,8 @@
 import { supabase } from './supabase'
 import type {
   Draft, DraftMode, DraftPick, Gameweek, League, LeaguePlayer, Member,
-  Message, SquadPlayer, Standing, Trade, TradePlayerRow, Txn
+  Message, PredictionRow, PredictionStanding, SquadPlayer, Standing, TableTeam,
+  Trade, TradePlayerRow, Txn
 } from './types'
 
 /** Unwrap a PostgREST result, throwing the server's own message on failure. */
@@ -68,6 +69,32 @@ export const getMemberScores = (leagueId: string) =>
     supabase.from('member_gw_scores').select('member_id, gw, points')
       .eq('league_id', leagueId).order('gw')
   )
+
+// ---------------------------------------------------------- predictions --
+
+/** The real Premier League table, computed from finished fixtures. */
+export const getEplTable = () =>
+  ok<TableTeam[]>(supabase.from('epl_table').select('*').order('position'))
+
+export const getPrediction = (memberId: string) =>
+  rpc('member_prediction', { p_member: memberId }) as Promise<PredictionRow[]>
+
+export const getLeaguePredictions = (leagueId: string) =>
+  rpc('league_predictions', { p_league: leagueId }) as Promise<PredictionStanding[]>
+
+/** Team ids in predicted finishing order, first to twentieth. */
+export const setPredictions = (leagueId: string, teamIds: number[]) =>
+  rpc('set_predictions', { p_league: leagueId, p_team_ids: teamIds })
+
+export const predictionsDeadline = (leagueId: string) =>
+  rpc('predictions_deadline', { p_league: leagueId }) as unknown as Promise<string | null>
+
+export const predictionsOpen = (leagueId: string) =>
+  rpc('predictions_open', { p_league: leagueId }) as unknown as Promise<boolean>
+
+/** The maximum a perfect table is worth, read from the database that pays it. */
+export const predictionBonusMax = () =>
+  rpc('prediction_bonus_max') as unknown as Promise<number>
 
 export const getTrades = (leagueId: string) =>
   ok<Trade[]>(

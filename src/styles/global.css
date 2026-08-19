@@ -516,6 +516,13 @@ a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
   height: 2px;
   background: var(--uv-lift);
 }
+/* Seven tabs is the most this bar is asked to carry, and at 320px their labels
+   add up to fractionally more than the screen. A hair off the type keeps the
+   row on one line rather than letting it scroll sideways. */
+@media (max-width: 360px) {
+  .tabbar a { font-size: 9.5px; letter-spacing: .04em; gap: 4px; }
+}
+
 .tabbar svg { width: 19px; height: 19px; }
 .tabbar .dot {
   position: absolute;

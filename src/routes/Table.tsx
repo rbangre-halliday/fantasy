@@ -90,6 +90,14 @@ export default function Table () {
               <div style={{ textAlign: 'right' }}>
                 <div className="figure leader-total">{ranked[0].total_points}</div>
                 <span className="eyebrow">Points</span>
+                {/* Two numbers make one total; a leader who is ahead purely on
+                    a prediction bonus should not look like they out-scored
+                    everybody on the pitch. */}
+                {ranked[0].bonus_points > 0 && (
+                  <p className="tiny" style={{ marginTop: 6, color: '#B79BC6' }}>
+                    {ranked[0].squad_points} squad + {ranked[0].bonus_points} predicted
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -124,7 +132,10 @@ export default function Table () {
                       <span className="name truncate" style={{ display: 'block' }}>
                         {r.team_name}{r.member_id === me.id && <span className="tiny muted"> · you</span>}
                       </span>
-                      <span className="tiny muted truncate">{r.manager_name}</span>
+                      <span className="tiny muted truncate">
+                        {r.manager_name}
+                        {r.bonus_points > 0 && ` · +${r.bonus_points} predicted`}
+                      </span>
                     </span>
                     <Sparkline values={trend.get(r.member_id) ?? []} />
                     <span className="num small muted" style={{ width: 46, textAlign: 'right' }}>
