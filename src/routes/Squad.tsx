@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
@@ -160,7 +160,10 @@ export default function Squad () {
                 ? <Notice kind="warn">{problem} — your XI must be 1 GK, 4 DEF, 4 MID, 2 FWD.</Notice>
                 // The how-to lives under the pitch, where the tapping
                 // happens. This slot is for the rule you cannot see.
-                : <Notice>Each player locks when their own match kicks off.</Notice>}
+                : <Notice>
+                    Each player locks when their own match kicks off.{' '}
+                    <Link className="rules-link" to="/rules#lineups">Why can’t I move him?</Link>
+                  </Notice>}
               {saving && <div className="tiny muted">Saving…</div>}
             </div>
           )}

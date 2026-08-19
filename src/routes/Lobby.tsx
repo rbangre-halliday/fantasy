@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
@@ -138,6 +138,9 @@ export default function Lobby () {
           <button className="btn quiet" onClick={() => { setTeamName(me.team_name); setRenaming(true) }}>
             Rename my team
           </button>
+          {/* The waiting room is the one moment when nobody is mid-decision,
+              which makes it the right place to offer the rulebook. */}
+          <Link className="btn quiet" to="/rules">Read the rules</Link>
           {isCommissioner ? (
             <button className="btn quiet" disabled={busy} onClick={() => {
               if (confirm('Delete this league for everyone? This cannot be undone.')) {

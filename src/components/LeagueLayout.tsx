@@ -163,6 +163,9 @@ export default function LeagueLayout () {
             </NavLink>
           ))}
           <div className="grow" />
+          <NavLink to="/rules" className={({ isActive }) => isActive ? 'active' : ''}>
+            Rules
+          </NavLink>
           {state.isCommissioner && (
             <NavLink to={`${base}/commissioner`} className={({ isActive }) => isActive ? 'active' : ''}>
               Commissioner

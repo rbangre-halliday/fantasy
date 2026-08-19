@@ -1626,3 +1626,242 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 }
 .chat-send .input { min-height: 40px; }
 .chat-send .btn { min-height: 40px; padding: 0 16px; flex: none; }
+
+/* ------------------------------------------------------------- rulebook ---
+   A reference document inside an app, which is a different job from every
+   other screen: read through once, then returned to for one clause at a time,
+   usually because somebody sent a link to it. So the sections are anchored and
+   the jump strip follows you down — and the clauses sit on hairlines rather
+   than bullets, the same ruled column the standings and the draft board use.
+
+   The masthead here carries no tab strip, so it is the bare 57px rather than
+   the app's 86px. --head-h would park the strip 29px too low.
+   -------------------------------------------------------------------------- */
+
+.rules-page { --rules-head: calc(57px + env(safe-area-inset-top)); }
+
+/* Contents. Two shapes for one control: the segmented track this app already
+   uses, sticking under the masthead on a phone, and a rail beside the document
+   on a desktop — where ten sections in a row would either wrap into a broken
+   grid or scroll sideways with no visible handle to scroll it by.
+
+   Links, not buttons: a clause you can point a league-mate at needs a URL. */
+.rules-jump {
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rules-jump::-webkit-scrollbar { display: none; }
+
+.rules-jump a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 15px;
+  border-right: 1px solid var(--rule-2);
+  color: var(--fg-3);
+  font-stretch: 92%;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background .14s var(--ease), color .14s var(--ease);
+}
+.rules-jump a:last-child { border-right: 0; }
+.rules-jump a:hover { color: var(--fg-2); background: var(--stock-2); }
+.rules-jump a[aria-current='true'] { background: var(--uv); color: var(--uv-ink); }
+
+/* The three questions people actually arrive with, answered above the
+   document. A rulebook that opens at clause one makes everybody read to find
+   the one line they came for. */
+.rules-answers {
+  display: grid;
+  gap: var(--s-2);
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: var(--s-2);
+}
+@media (min-width: 820px) {
+  .rules-answers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
+}
+
+.rules-answer { display: flex; flex-direction: column; gap: 7px; }
+.rules-q {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -.012em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+.rules-more {
+  margin-top: auto;
+  padding-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--uv-lift);
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* The strip sticks under the masthead and spans the gutter, so the sections
+   scrolling behind it pass under a black bar rather than beside one. */
+.rules-nav {
+  position: sticky;
+  top: var(--rules-head);
+  z-index: 20;
+  margin: var(--s-6) calc(var(--gut) * -1) var(--s-2);
+  padding: 10px var(--gut);
+  background: var(--stock-0);
+  border-bottom: 1px solid var(--rule);
+}
+
+.rules-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+
+/* One measure for the document, so every hairline in it ends on the same
+   vertical — clauses running to a shorter width than the rules above them was
+   what made the old draft look ragged down its right edge. */
+.rules-doc { max-width: 74ch; }
+
+.rules-section {
+  padding-top: var(--s-6);
+  /* Clears the masthead and the strip: an anchor that lands a heading behind
+     the sticky bar reads as a broken link. */
+  scroll-margin-top: calc(var(--rules-head) + 74px);
+}
+.rules-section + .rules-section { border-top: 1px solid var(--rule); }
+.rules-section .standfirst { max-width: 64ch; }
+
+/* Desktop: the contents become a rail, the document keeps a reading measure
+   rather than stretching to the full page width. */
+@media (min-width: 1000px) {
+  .rules-grid {
+    grid-template-columns: 172px minmax(0, 1fr);
+    gap: var(--s-7);
+    margin-top: var(--s-7);
+  }
+  .rules-nav {
+    position: sticky;
+    top: calc(var(--rules-head) + var(--s-5));
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+  }
+  .rules-jump {
+    flex-direction: column;
+    width: 100%;
+    border: 0;
+    border-left: 1px solid var(--rule);
+    border-radius: 0;
+    overflow: visible;
+  }
+  /* A moving marker on a vertical rule, the same device the desktop tab strip
+     uses along the bottom. A column of filled purple blocks would be the
+     loudest thing on a page of grey prose. */
+  .rules-jump a {
+    min-height: 0;
+    padding: 7px 0 7px 13px;
+    border-right: 0;
+    box-shadow: inset 1px 0 0 transparent;
+  }
+  .rules-jump a:hover { background: none; color: var(--fg-2); }
+  .rules-jump a[aria-current='true'] {
+    background: none;
+    color: var(--fg);
+    box-shadow: inset 2px 0 0 var(--uv-lift);
+  }
+  .rules-section { scroll-margin-top: calc(var(--rules-head) + var(--s-5)); }
+  .rules-section:first-child { padding-top: 0; }
+}
+
+.rules-list { margin-top: var(--s-4); border-top: 1px solid var(--rule); }
+.rules-list li {
+  position: relative;
+  padding: 12px 0 12px 22px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+/* A dash rather than a dot, and it carries the one bit of state a rule has:
+   crimson where the rule is a refusal, green where it is a permission. */
+.rules-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 21px;
+  width: 9px;
+  height: 1px;
+  background: var(--rule-2);
+}
+.rules-list li.is-no::before  { background: var(--live); }
+.rules-list li.is-yes::before { background: var(--up); }
+.rules-list li b { font-weight: 650; color: var(--fg); }
+.rules-list li i { font-style: italic; color: var(--fg); }
+
+/* The squad shape as an actual table — four positions and three columns is a
+   table, and setting it as prose was how the old copy ended up saying
+   "2/5/5/4" and hoping. */
+.rules-shape {
+  margin-top: var(--s-4);
+  overflow-x: auto;
+  background: var(--stock-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+}
+.rules-shape table { width: 100%; min-width: 320px; border-collapse: collapse; }
+.rules-shape caption { text-align: left; padding: 12px 14px 4px; }
+.rules-shape th, .rules-shape td {
+  padding: 9px 14px;
+  text-align: right;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+  color: var(--fg);
+}
+.rules-shape thead th {
+  font-stretch: 88%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+/* The position column is labels, not figures — it reads left while the three
+   counts read right. */
+.rules-shape th[scope='row'],
+.rules-shape thead th:first-child { text-align: left; }
+.rules-shape tbody tr:last-child th,
+.rules-shape tbody tr:last-child td { border-bottom-color: var(--rule-2); }
+.rules-shape tfoot th, .rules-shape tfoot td { border-bottom: 0; font-weight: 800; }
+
+/* An aside to a clause: the thing that is true but isn't a rule. */
+.rules-note {
+  max-width: 66ch;
+  margin-top: var(--s-4);
+  padding-left: 14px;
+  border-left: 2px solid var(--rule-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--fg-3);
+}
+.rules-note b { font-weight: 650; color: var(--fg-2); }
+
+/* A link out of the screen you're on and into the clause that explains what
+   just stopped you. Underlined rather than coloured alone: on a page of grey
+   prose, colour by itself is not an affordance. */
+.rules-link {
+  color: var(--uv-lift);
+  border-bottom: 1px solid var(--uv-line);
+  transition: border-color .16s var(--ease);
+}
+.rules-link:hover { border-bottom-color: var(--uv-lift); }

@@ -16,6 +16,7 @@ import Trades from './routes/Trades'
 import Table from './routes/Table'
 import Commissioner from './routes/Commissioner'
 import ChatPage from './routes/ChatPage'
+import Rules from './routes/Rules'
 
 function Gate ({ children }: { children: JSX.Element }) {
   const { session, loading } = useAuth()
@@ -32,6 +33,9 @@ export default function App () {
         <ToastProvider>
           <Routes>
             <Route path="/signin" element={<SignIn />} />
+            {/* Public: people ask what the rules are before they make an
+                account, and an invite link is often the first thing they see. */}
+            <Route path="/rules" element={<Rules />} />
             <Route path="/join/:code?" element={<Gate><JoinLeague /></Gate>} />
             <Route path="/new" element={<Gate><NewLeague /></Gate>} />
             <Route path="/" element={<Gate><MyLeagues /></Gate>} />

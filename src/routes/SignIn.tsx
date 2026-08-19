@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { supabase, readableError } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { Loading, Notice } from '../components/ui'
@@ -184,7 +184,12 @@ export default function SignIn () {
               Four verbs in order. The steps read chronologically on their own,
               so numbering them was decoration standing in for structure. */}
           <section style={{ padding: 'clamp(32px, 4.5vw, 52px) 0 clamp(48px, 7vw, 88px)' }}>
-            <h2 className="h2">How it works</h2>
+            {/* The grid below sets its own margin to zero, so the room under
+                this row has to come from the row. */}
+            <div className="between wrap" style={{ marginBottom: 16 }}>
+              <h2 className="h2">How it works</h2>
+              <Link className="btn ghost" to="/rules">Read the full rules</Link>
+            </div>
             <div className="mt-32 rules">
               {[
                 ['Draft', 'Randomised snake order, two minutes a pick. Miss the clock and the best available player is taken for you.'],

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
@@ -95,7 +96,10 @@ export default function Players () {
     <div className="page">
       <PageHead
         title="Players"
-        meta="Free agency is first come, first served. Sign a player and you drop one in the same position."
+        meta={<>
+          Free agency is first come, first served. Sign a player and you drop one in the
+          same position. <Link className="rules-link" to="/rules#market">Signing rules</Link>
+        </>}
         aside={
           <div style={{ textAlign: 'right' }}>
             <div className="figure" style={{ fontSize: 'clamp(38px, 8vw, 54px)' }}>{freeCount}</div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
@@ -51,7 +52,10 @@ export default function Trades () {
     <div className="page narrow">
       <PageHead
         title="Trades"
-        meta="Up to three each way, positions matched. No vetoes, no committee." />
+        meta={<>
+          Up to three each way, positions matched. No vetoes, no committee.{' '}
+          <Link className="rules-link" to="/rules#trades">Trade rules</Link>
+        </>} />
 
       {!open && <div className="mt-16"><Notice kind="warn">Trading opens once the draft is complete.</Notice></div>}
 
