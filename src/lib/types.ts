@@ -172,6 +172,25 @@ export interface Txn {
   created_at: string
 }
 
+/** Row shape of free_agent_moves(): one signing, with both players named. */
+export interface Move {
+  id: string
+  member_id: string | null
+  team_name: string | null
+  manager_name: string | null
+  in_id: number | null
+  in_name: string | null
+  in_pos: Position | null
+  in_club: string | null
+  in_code: number | null
+  out_id: number | null
+  out_name: string | null
+  out_pos: Position | null
+  out_club: string | null
+  out_code: number | null
+  created_at: string
+}
+
 export interface Gameweek {
   id: number
   name: string

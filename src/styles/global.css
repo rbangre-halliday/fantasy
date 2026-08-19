@@ -1863,6 +1863,44 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 }
 .rules-note b { font-weight: 650; color: var(--fg-2); }
 
+/* ----------------------------------------------------------- free agency ---
+   The market's news, made visible where the market is read: who has just been
+   dropped back into the pool, and what everyone else has been doing.
+   -------------------------------------------------------------------------- */
+
+/* Gold, not green: green on this screen already means "available", and the
+   point of this chip is that the player became available *just now*. */
+.dropped-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.dropped-chip::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+}
+
+/* The line under a player's name in the market. It shares a 390px row with a
+   crest, a position chip, a fixture, an owner and a points column, so it clips
+   rather than stacking three words to a line. */
+.market-meta { flex-wrap: nowrap; overflow: hidden; }
+.market-meta > span { white-space: nowrap; }
+
+/* A feed line is one sentence, so it doesn't need the 56px a tappable player
+   row does. */
+.move-row {
+  min-height: 0;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  align-items: baseline;
+}
+.move-in  { color: var(--fg); font-weight: 600; }
+.move-out { color: var(--fg-3); }
+
 /* A link out of the screen you're on and into the clause that explains what
    just stopped you. Underlined rather than coloured alone: on a page of grey
    prose, colour by itself is not an affordance. */

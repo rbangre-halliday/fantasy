@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
 import type {
   Draft, DraftMode, DraftPick, Gameweek, League, LeaguePlayer, Member,
-  Message, PredictionRow, PredictionStanding, SquadPlayer, Standing, TableTeam,
-  Trade, TradePlayerRow, Txn
+  Message, Move, PredictionRow, PredictionStanding, SquadPlayer, Standing,
+  TableTeam, Trade, TradePlayerRow, Txn
 } from './types'
 
 /** Unwrap a PostgREST result, throwing the server's own message on failure. */
@@ -109,6 +109,10 @@ export const getTradePlayers = (leagueId: string) =>
       .select('*, trades!inner(league_id)')
       .eq('trades.league_id', leagueId)
   )
+
+/** Signings and drops, newest first, with both players and the manager named. */
+export const getFreeAgentMoves = (leagueId: string, limit = 20) =>
+  rpc('free_agent_moves', { p_league: leagueId, p_limit: limit }) as Promise<Move[]>
 
 export const getTransactions = (leagueId: string, limit = 60) =>
   ok<Txn[]>(
