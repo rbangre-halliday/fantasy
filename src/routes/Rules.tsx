@@ -120,19 +120,19 @@ const SECTIONS: Section[] = [
     title: 'Lineups and locking',
     lede: 'Change your XI as often as you like, right up to each player’s own kickoff. After that he’s yours for the week whatever happens.',
     clauses: [
-      no(<><b>A player who has kicked off can’t be moved.</b> He locks the moment his club’s match in the current gameweek starts, and stays locked until that gameweek is finished — he can’t come out of your XI and he can’t go into it.</>),
+      no(<><b>A player who has kicked off can’t be moved.</b> He locks the moment his club’s match in <i>that</i> gameweek starts — he can’t come out of your XI and he can’t go into it.</>),
       { text: <><b>Locking is per player, not a league deadline.</b> If your Saturday lunchtime midfielder has played, your Monday night striker is still free to move.</> },
       { text: <><b>A player whose club has no fixture this gameweek is never locked.</b></> },
-      no(<><b>A swap needs both players free.</b> Tapping two players trades their places, so a locked substitute can no more come in than a locked starter can go out.</>),
+      no(<><b>A swap needs both players free.</b> Open a player and pick who takes his place; a locked substitute can no more come in than a locked starter can go out.</>),
       { text: <><b>No transfer costs, no limit on edits.</b> Rearranging your XI is free and unlimited.</>, tone: 'yes' },
       { text: <><b>Your lineup carries forward.</b> Each new gameweek starts as a copy of the last one, so you only touch it if you want something changed.</> },
       { text: <><b>Gaps fill themselves.</b> If a player leaves your squad, his slot is taken by the best-ranked eligible player you own — you’re never left with an incomplete XI.</> }
     ],
     after: (
       <p className="rules-note">
-        <b>One quirk worth knowing.</b> Locking is judged against the current gameweek’s
-        fixtures whichever week you’re editing, so while a player is mid-match you can’t
-        shuffle him in next week’s lineup either. Wait for the gameweek to finish.
+        <b>Each gameweek locks on its own.</b> A striker mid-match on Saturday is fixed
+        in that gameweek’s XI and still free to move in the next one — the two lineups
+        are separate, and the gameweek switch above your pitch says which you’re editing.
       </p>
     )
   },

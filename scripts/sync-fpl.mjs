@@ -141,7 +141,12 @@ async function main () {
         player_id: el.id,
         gw,
         points: el.stats?.total_points ?? 0,
-        minutes: el.stats?.minutes ?? 0
+        minutes: el.stats?.minutes ?? 0,
+        // FPL's own itemisation of the total: one entry per fixture, each with
+        // the identifier, the count and the points it earned. Stored as sent, so
+        // the app can show how a score was arrived at without keeping its own
+        // copy of scoring rules that change between seasons.
+        breakdown: el.explain ?? null
       }))
     await upsert('player_gw_points', rows, 'player_id,gw')
   }

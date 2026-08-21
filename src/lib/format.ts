@@ -81,3 +81,92 @@ export function fixtureLabel (
   const base = `${fx.opp} (${fx.home ? 'H' : 'A'})`
   return showGw != null && fx.gw !== showGw ? `${base} · GW${fx.gw}` : base
 }
+
+/**
+ * FPL's stat identifiers, in English.
+ *
+ * The scoring rules change between seasons — defensive contributions arrived
+ * one summer, manager elements another — so the points themselves are always
+ * FPL's own number and this map only names them. Anything unrecognised falls
+ * back to its identifier with the underscores taken out, which reads well
+ * enough that a new rule never shows up as a blank row.
+ */
+const POINT_LABELS: Record<string, string> = {
+  minutes: 'Minutes played',
+  goals_scored: 'Goals',
+  assists: 'Assists',
+  clean_sheets: 'Clean sheet',
+  goals_conceded: 'Goals conceded',
+  own_goals: 'Own goals',
+  penalties_saved: 'Penalties saved',
+  penalties_missed: 'Penalties missed',
+  yellow_cards: 'Yellow card',
+  red_cards: 'Red card',
+  saves: 'Saves',
+  bonus: 'Bonus',
+  defensive_contribution: 'Defensive contribution',
+  starts: 'Started'
+}
+
+export interface PointsLine {
+  identifier: string
+  label: string
+  /** "90'", "×2", or empty where the count would only repeat the points. */
+  detail: string
+  points: number
+}
+
+/**
+ * FPL's per-fixture explanation, flattened into the lines a manager reads.
+ *
+ * A double gameweek arrives as two fixtures and is summed, because the squad
+ * screen shows one number per player. `bps` is dropped: it is the input to the
+ * bonus, not points, and a row scoring zero next to real ones invites the
+ * reader to work out why.
+ */
+export function pointsLines (
+  breakdown: { stats: { identifier: string; points: number; value: number }[] }[] | null
+): PointsLine[] {
+  const byId = new Map<string, { points: number; value: number }>()
+  for (const fx of breakdown ?? []) {
+    for (const s of fx.stats ?? []) {
+      if (s.identifier === 'bps') continue
+      const at = byId.get(s.identifier) ?? { points: 0, value: 0 }
+      byId.set(s.identifier, { points: at.points + s.points, value: at.value + s.value })
+    }
+  }
+  return [...byId.entries()]
+    .filter(([, v]) => v.points !== 0 || v.value !== 0)
+    .map(([identifier, v]) => ({
+      identifier,
+      label: POINT_LABELS[identifier] ?? identifier.replace(/_/g, ' '),
+      detail:
+        identifier === 'minutes' ? `${v.value}'`
+        : identifier === 'bonus' || v.value <= 1 ? ''
+        : `×${v.value}`,
+      points: v.points
+    }))
+    // Minutes first — it is the line that explains whether the rest happened —
+    // then the biggest contributions, then the deductions.
+    .sort((a, b) =>
+      (a.identifier === 'minutes' ? -1 : 0) - (b.identifier === 'minutes' ? -1 : 0) ||
+      b.points - a.points)
+}
+
+/**
+ * The opponent for the gameweek being looked at, straight off the squad row.
+ *
+ * This used to be composed from a client-side "next unfinished fixture" lookup,
+ * which is a different question: on the GW1 tab it printed GW1's kick-off time
+ * beside GW2's opponent. Both halves now come from the same row.
+ */
+export function gwFixtureLabel (p: {
+  opp_short: string | null
+  is_home: boolean | null
+  fixture_count: number
+}): string {
+  if (!p.opp_short) return p.fixture_count === 0 ? 'No fixture' : ''
+  const base = `${p.opp_short} (${p.is_home ? 'H' : 'A'})`
+  // A double gameweek: the first match named, the rest counted.
+  return p.fixture_count > 1 ? `${base} +${p.fixture_count - 1}` : base
+}

@@ -19,7 +19,7 @@ one owner per real player, fixed 16-man squads, and official FPL points all seas
 ### 1. Supabase
 
 Create a project at [supabase.com](https://supabase.com) (free tier is plenty),
-then open **SQL Editor** and run these four files **in order**:
+then open **SQL Editor** and run every file in `supabase/` **in numeric order**:
 
 | File | What it does |
 |---|---|
@@ -27,6 +27,10 @@ then open **SQL Editor** and run these four files **in order**:
 | `supabase/02_rls.sql` | row-level security — read policies only, no write policies |
 | `supabase/03_functions.sql` | the game itself: draft, locking, scoring, trades |
 | `supabase/04_triggers_and_realtime.sql` | signup hook, realtime publication, grants |
+| `supabase/05…10_*.sql` | later features, each one safe to re-run: badges, async drafts, chat, table predictions, the free agent feed, and the points breakdown |
+
+Every file is idempotent, and a later file supersedes anything it redefines — so
+after pulling new code, run the ones you haven't run yet.
 
 Then under **Authentication → Providers**, keep **Email** enabled. If you'd rather
 skip inbox round-trips with friends, turn **Confirm email** off.
@@ -92,7 +96,7 @@ client calls RPCs; it cannot write to a table directly.
 | The pick clock | `drafts.pick_deadline`, compared against `now()` **on the server**. Clients call `draft_tick()` when their own clock runs out; the server re-checks before auto-picking, so an early or duplicated call is a no-op |
 | Auto-pick | `best_available()` — highest previous-season points that still fits the squad |
 | Roster validity | The positional caps (2/5/5/4) sum to exactly 16, so "never exceed a cap" is enough on its own to guarantee a completable squad |
-| Player locking | `is_player_locked()` — locked from that player's *own* kickoff until the gameweek finishes |
+| Player locking | `is_player_locked(player, gw)` — locked from that player's *own* kickoff, in that gameweek only, so next week's XI stays editable while this week runs |
 | Auto-substitutions | `member_gw_score()` walks the bench in priority order, same position only, formation unchanged |
 | Scoring | `player_gw_points` straight from FPL; only gameweeks `>= scoring_start_gw` count |
 
@@ -130,8 +134,11 @@ quiet as a word — vivid violet *type* on black is the note that reads cheap.
 
 Desktop gets a tab strip under the masthead and a two-column draft board; phones
 get a thumb-reachable bottom bar, bottom sheets instead of dialogs, and 16px
-inputs so iOS doesn't zoom. Lineups are edited by tapping two players to swap
-them, which means the XI can never enter an invalid state.
+inputs so iOS doesn't zoom. Tapping a player opens him: his fixture for the
+gameweek you're looking at, FPL's own itemisation of how he scored, and — if his
+match hasn't started — the short list of squad members who could take his place.
+A lineup change is always a swap chosen from that list, so the XI can never enter
+an invalid state.
 
 ## Repo map
 

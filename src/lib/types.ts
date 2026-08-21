@@ -76,6 +76,16 @@ export interface LeaguePlayer {
   locked: boolean
 }
 
+/**
+ * One line of FPL's own itemisation of a score: "goals_scored, value 2, points
+ * 8". Stored raw, so the app never has to hold a copy of the scoring rules.
+ */
+export interface PointsItem {
+  identifier: string
+  points: number
+  value: number
+}
+
 /** Row shape of the member_squad() RPC. */
 export interface SquadPlayer {
   player_id: number
@@ -91,6 +101,13 @@ export interface SquadPlayer {
   kickoff: string | null
   status: string | null
   news: string | null
+  /** This gameweek's opponent — not the club's next fixture. Null on a blank. */
+  opp_short: string | null
+  is_home: boolean | null
+  /** 0 on a blank gameweek, 2 on a double. */
+  fixture_count: number
+  /** One entry per fixture played, or null until the sync job has been by. */
+  breakdown: { fixture: number; stats: PointsItem[] }[] | null
 }
 
 export interface Standing {

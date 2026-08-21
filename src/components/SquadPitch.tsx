@@ -97,28 +97,36 @@ export default function SquadPitch ({
                   swappable && 'is-swappable',
                   isLocked && 'is-locked'].filter(Boolean).join(' ')
 
-                // A button only where it does something. On screens that use
-                // the pitch as a diagram this stays a div, so nothing offers
-                // an interaction it cannot honour.
-                return onSelect ? (
-                  <button type="button" className={cls} key={p.id}
-                    disabled={isLocked}
-                    aria-pressed={isSel}
-                    title={`${p.name} · ${p.club ?? ''}`}
-                    onClick={() => onSelect(p.id)}>
+                // Drawn once, whether or not it can be tapped: a slot that
+                // shows a score on your own squad and hides it on somebody
+                // else's was two renderings of the same thing, and the second
+                // one was quietly missing the number.
+                const inner = (
+                  <>
                     {p.kit && <img className="kit" src={kitUrl(p.kit, pos === 'GK')}
                       alt="" width={22} height={22} loading="lazy" decoding="async" />}
                     <span className="slot-name">{p.name}</span>
                     {pts !== undefined
                       ? <span className="slot-pts num">{pts}</span>
                       : (!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
+                  </>
+                )
+
+                // A button only where it does something. On screens that use
+                // the pitch as a diagram this stays a div, so nothing offers
+                // an interaction it cannot honour. A locked player is *not*
+                // disabled: he can no longer be moved, but he is the one you
+                // most want to open, because his points have started arriving.
+                return onSelect ? (
+                  <button type="button" className={cls} key={p.id}
+                    aria-pressed={isSel}
+                    title={`${p.name} · ${p.club ?? ''}`}
+                    onClick={() => onSelect(p.id)}>
+                    {inner}
                   </button>
                 ) : (
                   <div className={cls} key={p.id} title={`${p.name} · ${p.club ?? ''}`}>
-                    {p.kit && <img className="kit" src={kitUrl(p.kit, pos === 'GK')}
-                      alt="" width={22} height={22} loading="lazy" decoding="async" />}
-                    <span className="slot-name">{p.name}</span>
-                    {(!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
+                    {inner}
                   </div>
                 )
               })}

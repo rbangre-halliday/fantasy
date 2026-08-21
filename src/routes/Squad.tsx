@@ -5,8 +5,9 @@ import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, Segmented } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
+import PlayerSheet from '../components/PlayerSheet'
 import { useCrests } from '../lib/images'
-import { availability, fixtureLabel, kickoffLabel, xiProblem } from '../lib/format'
+import { availability, gwFixtureLabel, kickoffLabel, xiProblem } from '../lib/format'
 import { XI_SHAPE } from '../lib/types'
 import type { SquadPlayer } from '../lib/types'
 
@@ -22,7 +23,7 @@ export default function Squad () {
 
   const [gw, setGw] = useState(currentGw)
   const [squad, setSquad] = useState<SquadPlayer[] | null>(null)
-  const [picked, setPicked] = useState<number | null>(null)
+  const [openId, setOpenId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -32,7 +33,7 @@ export default function Squad () {
     setSquad(await api.getSquad(viewing.id, gw))
   }, [viewing.id, gw, isMine])
 
-  useEffect(() => { setSquad(null); load().catch(fail) }, [load, fail])
+  useEffect(() => { setSquad(null); setOpenId(null); load().catch(fail) }, [load, fail])
 
   const starters = useMemo(
     () => (squad ?? []).filter(p => p.lineup_status === 'starter'), [squad])
@@ -73,7 +74,7 @@ export default function Squad () {
       return p
     })
     setSquad(next)
-    setPicked(null)
+    setOpenId(null)
     void persist(next)
   }
 
@@ -91,29 +92,15 @@ export default function Squad () {
     void persist(next)
   }
 
-  function onTap (p: SquadPlayer) {
-    if (!isMine || p.locked) return
-    if (picked === null) { setPicked(p.player_id); return }
-    if (picked === p.player_id) { setPicked(null); return }
-    const other = squad!.find(x => x.player_id === picked)!
-    const swappable =
-      other.position === p.position &&
-      (other.lineup_status === 'starter') !== (p.lineup_status === 'starter')
-    if (swappable) swap(picked, p.player_id)
-    else setPicked(p.player_id)
-  }
+  /** Who could take this player's place: same position, other side, movable. */
+  const swapTargets = (p: SquadPlayer) => (squad ?? []).filter(o =>
+    o.player_id !== p.player_id &&
+    o.position === p.position &&
+    (o.lineup_status === 'starter') !== (p.lineup_status === 'starter') &&
+    !o.locked)
 
-  const pickedPlayer = squad?.find(p => p.player_id === picked) ?? null
-  const canSwapWith = (p: SquadPlayer) =>
-    !!pickedPlayer &&
-    pickedPlayer.player_id !== p.player_id &&
-    pickedPlayer.position === p.position &&
-    (pickedPlayer.lineup_status === 'starter') !== (p.lineup_status === 'starter') &&
-    !p.locked
-
+  const opened = squad?.find(p => p.player_id === openId) ?? null
   const crestOf = (p: SquadPlayer) => crests.shortCode.get(p.club_short ?? '')
-  const fixtureOf = (p: SquadPlayer) =>
-    crests.nextFixture.get(crests.idByShort.get(p.club_short ?? '') ?? -1)
 
   const gwOptions = [
     { value: String(currentGw), label: `GW ${currentGw}` },
@@ -161,7 +148,7 @@ export default function Squad () {
                 // The how-to lives under the pitch, where the tapping
                 // happens. This slot is for the rule you cannot see.
                 : <Notice>
-                    Each player locks when their own match kicks off.{' '}
+                    Each player locks when his own match kicks off — in that gameweek only.{' '}
                     <Link className="rules-link" to="/rules#lineups">Why can’t I move him?</Link>
                   </Notice>}
               {saving && <div className="tiny muted">Saving…</div>}
@@ -171,8 +158,9 @@ export default function Squad () {
           <div className="mt-32 squad-grid">
             {/* The XI is drawn once, and the drawing is the control. It used to
                 be here as a diagram *and* again as eleven rows underneath —
-                the same eleven names twice, with only the list clickable. Tap
-                a shirt, tap an eligible bench player, done. */}
+                the same eleven names twice, with only the list clickable. Now
+                a tap anywhere opens the player: his fixture, how his points
+                were scored, and the substitution if he can still be moved. */}
             <aside className="squad-pitch-col">
               <Eyebrow>Starting XI · 4-4-2</Eyebrow>
               <SquadPitch
@@ -181,22 +169,14 @@ export default function Squad () {
                   id: p.player_id, name: p.web_name, club: p.club_short,
                   position: p.position, kit: crestOf(p)
                 }))}
-                onSelect={isMine ? id => {
-                  const p = squad!.find(x => x.player_id === id)
-                  if (p) onTap(p)
-                } : undefined}
-                selected={picked}
-                canSwap={id => {
-                  const p = squad!.find(x => x.player_id === id)
-                  return p ? canSwapWith(p) : false
-                }}
+                onSelect={setOpenId}
                 locked={id => !!squad!.find(x => x.player_id === id)?.locked}
                 points={id => squad!.find(x => x.player_id === id)?.gw_points}
               />
               <p className="tiny muted" style={{ marginTop: 12 }}>
                 {isMine
-                  ? 'Tap a player, then tap a bench player in the same position to swap.'
-                  : 'Points shown are for this gameweek.'}
+                  ? 'Tap a player for his points breakdown, and to bench him.'
+                  : 'Tap a player to see how his points were scored.'}
               </p>
             </aside>
 
@@ -205,12 +185,9 @@ export default function Squad () {
                 <Eyebrow>Bench · in substitution order</Eyebrow>
                 <ul className="list">
                   {bench.map((p, i) => (
-                    <PlayerRow key={p.player_id} p={p} gw={gw} crest={crestOf(p)} fixture={fixtureOf(p)}
+                    <PlayerRow key={p.player_id} p={p} crest={crestOf(p)}
                       lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
-                      selected={picked === p.player_id}
-                      highlight={canSwapWith(p)}
-                      interactive={isMine}
-                      onTap={() => onTap(p)}
+                      onTap={() => setOpenId(p.player_id)}
                       trailing={isMine ? (
                         <span className="row-aside">
                           <button className="nudge" aria-label={`Move ${p.web_name} up the bench`}
@@ -233,6 +210,15 @@ export default function Squad () {
         </>
       )}
 
+      {opened && (
+        <PlayerSheet
+          p={opened} gw={gw} isMine={isMine} busy={saving}
+          crestOf={crestOf}
+          swapTargets={swapTargets(opened)}
+          onSwap={other => swap(opened.player_id, other)}
+          onClose={() => setOpenId(null)} />
+      )}
+
       <style>{`
         .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
         .squad-list-col { max-width: 640px; }
@@ -252,32 +238,24 @@ export default function Squad () {
 }
 
 function PlayerRow ({
-  p, lead, trailing, selected, highlight, interactive, onTap, crest, fixture
+  p, lead, trailing, onTap, crest
 }: {
   p: SquadPlayer
   crest?: number
-  fixture?: { opp: string; home: boolean; gw: number }
-  gw: number
   lead?: React.ReactNode
   trailing?: React.ReactNode
-  selected: boolean
-  highlight: boolean
-  interactive: boolean
   onTap: () => void
 }) {
   const flag = availability(p.status)
-  const Tag = interactive ? 'button' : 'div'
+  const fixture = gwFixtureLabel(p)
   return (
     // The reorder controls sit *beside* the row's hit target, not inside it.
     // Nested buttons are invalid HTML, and a browser that recovers from them
     // does so by making the inner control unreachable by keyboard.
     <li className={trailing ? 'row-with-aside' : undefined}>
-      <Tag
-        className={`list-row ${selected ? 'is-selected' : ''} ${p.locked ? 'is-disabled' : ''}`}
-        // A hairline marker, not a slab of colour down the edge of the row.
-        style={highlight ? { boxShadow: 'inset 1px 0 0 var(--up)', background: 'var(--up-deep)' } : undefined}
-        {...(interactive ? { onClick: onTap, disabled: p.locked } : {})}
-      >
+      {/* A locked row still opens: it can't be moved, but it is the row whose
+          points you most want itemised. */}
+      <button className={`list-row ${p.locked ? 'is-disabled' : ''}`} onClick={onTap}>
         {lead}
         <Crest code={crest} size={18} alt={p.club_short ?? ''} />
         <span className="grow" style={{ minWidth: 0 }}>
@@ -287,14 +265,14 @@ function PlayerRow ({
             {p.locked
               ? <span className="locked"><IconLock /> {p.minutes > 0 ? `${p.minutes}'` : 'Kicked off'}</span>
               : <span>{kickoffLabel(p.kickoff)}</span>}
-            {fixture && <span className="fixture">{fixtureLabel(fixture)}</span>}
+            {fixture && <span className="fixture">{fixture}</span>}
             {flag && <span style={{ color: flag.tone }}>· {flag.label}</span>}
           </span>
         </span>
         <span className="num" style={{ width: 38, textAlign: 'right', fontWeight: 700 }}>
           {p.gw_points}
         </span>
-      </Tag>
+      </button>
       {trailing}
     </li>
   )
