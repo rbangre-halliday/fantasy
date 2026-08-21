@@ -113,28 +113,31 @@ export default function Squad () {
         title={viewing.team_name}
         meta={isMine ? 'Your squad' : `Managed by ${viewing.profiles?.name ?? 'a manager'}`}
         aside={
-          <div style={{ textAlign: 'right' }}>
+          // The gameweek switch belongs to the number it changes. It used to
+          // sit in the row below, next to the squad switcher — two joined
+          // tracks eight pixels apart, each with its own filled cell, which
+          // reads as one control with two selections. Up here it replaces the
+          // static "Gameweek 1" caption rather than repeating it, and the row
+          // below is left with a single control and a single purple block.
+          <div className="stack gap-8" style={{ alignItems: 'flex-end' }}>
             <div className="figure" style={{ fontSize: 'clamp(44px, 11vw, 64px)' }}>
               {gwPoints}
             </div>
-            <div className="eyebrow" style={{ marginTop: 6 }}>Gameweek {gw}</div>
+            {gwOptions.length > 1
+              ? <Segmented value={String(gw)} onChange={v => setGw(Number(v))} options={gwOptions} />
+              : <div className="eyebrow">Gameweek {gw}</div>}
           </div>
         } />
 
-      <div className="row gap-8 wrap">
-        {gwOptions.length > 1 && (
-          <Segmented value={String(gw)} onChange={v => setGw(Number(v))} options={gwOptions} />
-        )}
-        <div className="seg" role="group">
-          {members.map(m => (
-            <button key={m.id} aria-pressed={m.id === viewing.id}
-              onClick={() => navigate(m.id === me.id
-                ? `/l/${league.id}/team`
-                : `/l/${league.id}/team/${m.id}`)}>
-              {m.id === me.id ? 'You' : m.team_name}
-            </button>
-          ))}
-        </div>
+      <div className="seg" role="group" aria-label="Whose squad">
+        {members.map(m => (
+          <button key={m.id} aria-pressed={m.id === viewing.id}
+            onClick={() => navigate(m.id === me.id
+              ? `/l/${league.id}/team`
+              : `/l/${league.id}/team/${m.id}`)}>
+            {m.id === me.id ? 'You' : m.team_name}
+          </button>
+        ))}
       </div>
 
       {squad === null ? <Loading rows={8} /> : squad.length === 0 ? (
