@@ -140,13 +140,15 @@ const SECTIONS: Section[] = [
     id: 'subs',
     nav: 'Subs',
     title: 'Automatic substitutions',
-    lede: 'You don’t have to be awake for kickoff. If a starter doesn’t play at all, your bench covers for him once the gameweek’s results land.',
+    lede: 'You don’t have to be awake for kickoff. If a starter doesn’t play at all, your bench covers for him once his match has been played.',
     clauses: [
       { text: <><b>The trigger is zero minutes, not a bad score.</b> A starter who played and scored one point stays in. A starter who was benched, injured or suspended is replaced.</> },
-      { text: <><b>Same position only,</b> so the formation never changes.</> },
-      { text: <><b>Bench order decides who comes on</b> — the highest-priority substitute in that position who actually played.</> },
+      { text: <><b>Nothing happens while he might still play.</b> A Monday night starter is not replaced on Saturday. The rule waits until every match his club has this gameweek is over — and a club with no match at all is settled straight away.</> },
+      { text: <><b>Bench order decides who comes on</b> — the first substitute in your order who actually played, whatever his position.</> },
+      { text: <><b>The XI he leaves behind has to be a legal one:</b> one goalkeeper, at least three at the back, two in midfield and one up front. So a defender can be covered by a forward and you finish 3–4–3 — but never by your reserve keeper, and never if it would leave you with two at the back.</> },
+      { text: <><b>Like for like comes first.</b> Where a substitute in the same position played, he takes the slot, so a straight swap is never spent on a vacancy somebody else could have filled.</> },
       { text: <><b>Each substitute can only come on once.</b></> },
-      no(<><b>If nobody qualifies, the slot scores zero.</b> Two midfielders blank and only one midfielder on your bench played? The second slot takes a nil.</>)
+      no(<><b>If nobody qualifies, the slot scores zero.</b> Two defenders blank, your bench defender didn’t play, and only one man can come on before you’d be down to two at the back? The second slot takes a nil.</>)
     ]
   },
   {
@@ -242,7 +244,7 @@ const ANSWERS: Array<{ q: string; a: string; to: string }> = [
   },
   {
     q: 'What if my starter doesn’t play?',
-    a: 'Your bench covers him automatically — same position, best bench priority, formation unchanged.',
+    a: 'Your bench covers him automatically once his match has been played — first man in your bench order who played, as long as the XI stays legal.',
     to: 'subs'
   },
   {

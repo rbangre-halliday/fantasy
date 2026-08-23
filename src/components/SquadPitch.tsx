@@ -35,7 +35,7 @@ const kitUrl = (code: number, gk: boolean) =>
  */
 export default function SquadPitch ({
   players, capacity = SQUAD_CAPS, compact = false,
-  onSelect, selected, canSwap, points, locked
+  onSelect, selected, canSwap, points, locked, subbed
 }: {
   players: PitchPlayer[]
   /** Slots per position: the 2/5/5/4 squad by default, or 1/4/4/2 for an XI. */
@@ -47,6 +47,8 @@ export default function SquadPitch ({
   canSwap?: (id: number) => boolean
   points?: (id: number) => number | undefined
   locked?: (id: number) => boolean
+  /** Replaced by the automatic substitution rule: his points didn't count. */
+  subbed?: (id: number) => boolean
 }) {
   // Goalkeepers at the bottom, forwards at the top — the way a formation is drawn.
   const rows: Position[] = ['FWD', 'MID', 'DEF', 'GK']
@@ -91,10 +93,12 @@ export default function SquadPitch ({
                 const isSel = selected === p.id
                 const swappable = canSwap?.(p.id) ?? false
                 const isLocked = locked?.(p.id) ?? false
+                const isSubbed = subbed?.(p.id) ?? false
                 const pts = points?.(p.id)
                 const cls = ['slot', 'filled',
                   isSel && 'is-selected',
                   swappable && 'is-swappable',
+                  isSubbed && 'is-subbed',
                   isLocked && 'is-locked'].filter(Boolean).join(' ')
 
                 // Drawn once, whether or not it can be tapped: a slot that
@@ -120,7 +124,7 @@ export default function SquadPitch ({
                 return onSelect ? (
                   <button type="button" className={cls} key={p.id}
                     aria-pressed={isSel}
-                    title={`${p.name} · ${p.club ?? ''}`}
+                    title={`${p.name} · ${p.club ?? ''}${isSubbed ? ' · substituted' : ''}`}
                     onClick={() => onSelect(p.id)}>
                     {inner}
                   </button>
@@ -220,6 +224,12 @@ export default function SquadPitch ({
            glow would be the only soft edge in the whole interface. */
         .slot.is-swappable { border-color: var(--uv); border-style: solid; }
         .slot.is-locked { opacity: .55; }
+        /* He didn't play and the bench covered for him, so the number on his
+           slot is not in your total. Struck through rather than hidden: the
+           nil is the reason a substitute came on, and reading it is how you
+           see the rule worked. */
+        .slot.is-subbed { opacity: .5; }
+        .slot.is-subbed .slot-pts { text-decoration: line-through; }
         .slot-pts {
           font-size: 11px;
           font-weight: 700;

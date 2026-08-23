@@ -41,7 +41,14 @@ export default function Squad () {
     () => (squad ?? []).filter(p => p.lineup_status !== 'starter')
       .sort((a, b) => (a.bench_priority ?? 99) - (b.bench_priority ?? 99)), [squad])
 
-  const gwPoints = useMemo(() => starters.reduce((n, p) => n + p.gw_points, 0), [starters])
+  // The eleven names on the pitch are not the eleven scores that count: a
+  // starter who didn't play has been replaced by a substitute, and it is the
+  // substitute's points the league table adds up. Summing the pitch was how
+  // this screen came to disagree with the table.
+  const gwPoints = useMemo(() => (squad ?? [])
+    .filter(p => (p.lineup_status === 'starter' && !p.auto_sub_out) || p.auto_sub_in)
+    .reduce((n, p) => n + p.gw_points, 0), [squad])
+  const subsMade = useMemo(() => (squad ?? []).filter(p => p.auto_sub_in).length, [squad])
   const problem = squad ? xiProblem(starters) : null
 
   async function persist (next: SquadPlayer[]) {
@@ -174,9 +181,17 @@ export default function Squad () {
                 }))}
                 onSelect={setOpenId}
                 locked={id => !!squad!.find(x => x.player_id === id)?.locked}
+                subbed={id => !!squad!.find(x => x.player_id === id)?.auto_sub_out}
                 points={id => squad!.find(x => x.player_id === id)?.gw_points}
               />
               <p className="tiny muted" style={{ marginTop: 12 }}>
+                {subsMade > 0 && (
+                  <>
+                    {subsMade === 1 ? 'One substitute came on' : `${subsMade} substitutes came on`}
+                    {' '}for a starter who didn’t play. The struck-through nil is his;
+                    the total above counts the substitute instead.{' '}
+                  </>
+                )}
                 {isMine
                   ? 'Tap a player for his points breakdown, and to bench him.'
                   : 'Tap a player to see how his points were scored.'}
@@ -189,23 +204,36 @@ export default function Squad () {
                 <ul className="list">
                   {bench.map((p, i) => (
                     <PlayerRow key={p.player_id} p={p} crest={crestOf(p)}
-                      lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
+                      lead={
+                        <span className={`num tiny ${p.auto_sub_in ? 'came-on' : 'muted'}`}
+                          style={{ width: 16 }}>
+                          {i + 1}
+                        </span>
+                      }
                       onTap={() => setOpenId(p.player_id)}
-                      trailing={isMine ? (
+                      trailing={(p.auto_sub_in || isMine) ? (
                         <span className="row-aside">
-                          <button className="nudge" aria-label={`Move ${p.web_name} up the bench`}
-                            disabled={i === 0 || saving}
-                            onClick={() => moveBench(p.player_id, -1)}><IconChevron dir="up" size={13} /></button>
-                          <button className="nudge" aria-label={`Move ${p.web_name} down the bench`}
-                            disabled={i === bench.length - 1 || saving}
-                            onClick={() => moveBench(p.player_id, 1)}><IconChevron dir="down" size={13} /></button>
+                          {/* The one thing this list never used to say. His
+                              points are in the total; the starter he replaced
+                              is struck through on the pitch. */}
+                          {p.auto_sub_in && <span className="bench-chip came-on">On</span>}
+                          {isMine && <>
+                            <button className="nudge" aria-label={`Move ${p.web_name} up the bench`}
+                              disabled={i === 0 || saving}
+                              onClick={() => moveBench(p.player_id, -1)}><IconChevron dir="up" size={13} /></button>
+                            <button className="nudge" aria-label={`Move ${p.web_name} down the bench`}
+                              disabled={i === bench.length - 1 || saving}
+                              onClick={() => moveBench(p.player_id, 1)}><IconChevron dir="down" size={13} /></button>
+                          </>}
                         </span>
                       ) : undefined} />
                   ))}
                 </ul>
                 <p className="tiny muted mt-8">
-                  If a starter doesn’t play, the first eligible substitute in this order
-                  takes their place automatically.
+                  If a starter doesn’t play, the first man in this order who did play takes
+                  his place — as long as the XI he leaves behind is a legal one: a keeper,
+                  three at the back, two in midfield, one up front. Substitutions land once
+                  his match has been played, not while it is still to come.
                 </p>
               </div>
             </div>
@@ -225,6 +253,10 @@ export default function Squad () {
       <style>{`
         .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
         .squad-list-col { max-width: 640px; }
+        /* A substitute who came on. Green is already the app's word for
+           available, which is exactly what this man turned out to be. */
+        .came-on { color: var(--up); font-weight: 700; }
+        .bench-chip.came-on { border-color: #14603F; background: var(--up-deep); }
         .bench-chip {
           display: inline-flex; align-items: center; gap: 7px;
           padding: 5px 9px; border-radius: var(--r-sm);

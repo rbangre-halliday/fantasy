@@ -108,6 +108,10 @@ export interface SquadPlayer {
   fixture_count: number
   /** One entry per fixture played, or null until the sync job has been by. */
   breakdown: { fixture: number; stats: PointsItem[] }[] | null
+  /** A starter the substitution rule took off. His points no longer count. */
+  auto_sub_out: boolean
+  /** A substitute the rule brought on. His points count in a starter's place. */
+  auto_sub_in: boolean
 }
 
 export interface Standing {

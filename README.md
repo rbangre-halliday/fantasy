@@ -27,7 +27,7 @@ then open **SQL Editor** and run every file in `supabase/` **in numeric order**:
 | `supabase/02_rls.sql` | row-level security — read policies only, no write policies |
 | `supabase/03_functions.sql` | the game itself: draft, locking, scoring, trades |
 | `supabase/04_triggers_and_realtime.sql` | signup hook, realtime publication, grants |
-| `supabase/05…10_*.sql` | later features, each one safe to re-run: badges, async drafts, chat, table predictions, the free agent feed, and the points breakdown |
+| `supabase/05…11_*.sql` | later features, each one safe to re-run: badges, async drafts, chat, table predictions, the free agent feed, the points breakdown, and the substitution rule |
 
 Every file is idempotent, and a later file supersedes anything it redefines — so
 after pulling new code, run the ones you haven't run yet.
@@ -97,7 +97,7 @@ client calls RPCs; it cannot write to a table directly.
 | Auto-pick | `best_available()` — highest previous-season points that still fits the squad |
 | Roster validity | The positional caps (2/5/5/4) sum to exactly 16, so "never exceed a cap" is enough on its own to guarantee a completable squad |
 | Player locking | `is_player_locked(player, gw)` — locked from that player's *own* kickoff, in that gameweek only, so next week's XI stays editable while this week runs |
-| Auto-substitutions | `member_gw_score()` walks the bench in priority order, same position only, formation unchanged |
+| Auto-substitutions | `member_gw_xi()` walks the bench in priority order once the starter's own matches are over, and brings on the first man who leaves a legal XI (1 GK, 3+ DEF, 2+ MID, 1+ FWD) |
 | Scoring | `player_gw_points` straight from FPL; only gameweeks `>= scoring_start_gw` count |
 
 Two consequences worth knowing, both falling out of the fixed 16-man squad:
