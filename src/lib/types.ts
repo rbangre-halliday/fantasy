@@ -41,8 +41,19 @@ export const canAdd = (c: PosCount, pos: Position): boolean =>
   flexUsed({ ...c, [pos]: c[pos] + 1 }) <= 1
 
 /** Would signing one and dropping the other leave a squad you may hold? */
-export const canSwap = (c: PosCount, add: Position, drop: Position): boolean =>
-  c[drop] > 0 && flexUsed({ ...c, [drop]: c[drop] - 1, [add]: c[add] + 1 }) <= 1
+export const canSwap = (c: PosCount, add: Position, drop: Position): boolean => {
+  if (c[drop] <= 0) return false
+  // Applied one after the other, not as two computed keys in one object
+  // literal. `{ ...c, [drop]: c[drop] - 1, [add]: c[add] + 1 }` looks right and
+  // silently loses the decrement whenever add and drop are the same position:
+  // the later key wins, the squad reads one player heavier than it is, and
+  // every like-for-like swap gets refused. Which is the one swap that is always
+  // legal.
+  const next = { ...c }
+  next[drop] -= 1
+  next[add] += 1
+  return flexUsed(next) <= 1
+}
 
 /**
  * Slots to draw for a squad: the floor at every position, widened wherever the
