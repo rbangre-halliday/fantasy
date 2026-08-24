@@ -929,6 +929,26 @@ a.list-row.is-you:hover { background: var(--stock-3); }
   color: var(--fg-3);
 }
 
+/* A column heading you can order by. It inherits the heading's own type so the
+   row still reads as a header rather than as a strip of buttons; only the
+   active one lifts to full contrast, which is also the only cue needed to say
+   which way the list is sorted. */
+.sort-th {
+  width: 40px;
+  text-align: right;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--fg-3);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.sort-th:disabled { cursor: default; }
+.sort-th.on { color: var(--fg); }
+.sort-th:not(:disabled):hover { color: var(--fg-2); }
+
 /* --------------------------------------------------------- segmented ----- */
 
 .seg {

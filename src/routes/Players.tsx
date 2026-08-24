@@ -28,6 +28,7 @@ export default function Players () {
   const [scope, setScope] = useState<Scope>('free')
   const [query, setQuery] = useState('')
   const [moves, setMoves] = useState<Move[]>([])
+  const [sort, setSort] = useState<'this' | 'last'>('this')
   const [signing, setSigning] = useState<LeaguePlayer | null>(null)
   const [dropId, setDropId] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
@@ -87,10 +88,20 @@ export default function Players () {
     return map
   }, [moves])
 
+  // Has the season started? Not gameweeks.finished — that is FPL's flag for
+  // "bonus confirmed", which lags full time by up to a day and left this page
+  // insisting it was still pre-season two days into gameweek 1, quoting last
+  // season's totals and saying nothing about the football that had just been
+  // played. A gameweek whose deadline has passed is the honest signal: it comes
+  // from FPL, it is never revised, and it means the football has begun.
+  const seasonUnderway = useMemo(
+    () => gameweeks.some(g => g.finished || Date.parse(g.deadline) < Date.now()),
+    [gameweeks])
+
   const visible = useMemo(() => {
     if (!players) return []
     const q = query.trim().toLowerCase()
-    return players.filter(p =>
+    const matched = players.filter(p =>
       (scope === 'all' || !p.owner_member_id) &&
       (scope !== 'dropped' || justDropped.has(p.id)) &&
       (filter === 'ALL' || p.position === filter) &&
@@ -98,12 +109,24 @@ export default function Players () {
         p.web_name.toLowerCase().includes(q) ||
         `${p.first_name ?? ''} ${p.second_name ?? ''}`.toLowerCase().includes(q) ||
         (p.club ?? '').toLowerCase().includes(q))
+    )
+    // The server hands these back ranked by last season, which is the right
+    // order for a draft and the wrong one for a market that has football behind
+    // it. Sorted here rather than in the RPC because the whole list is already
+    // in hand — the 200 cap is applied after, so re-ranking never hides anyone
+    // the old order would have shown.
+    const byThis = seasonUnderway && sort === 'this'
+    return [...matched].sort((a, b) =>
+      byThis
+        ? b.current_season_points - a.current_season_points ||
+          b.prev_season_points - a.prev_season_points ||
+          a.web_name.localeCompare(b.web_name)
+        : b.prev_season_points - a.prev_season_points ||
+          b.current_season_points - a.current_season_points ||
+          a.web_name.localeCompare(b.web_name)
     ).slice(0, 200)
-  }, [players, filter, scope, query, justDropped])
+  }, [players, filter, scope, query, justDropped, sort, seasonUnderway])
 
-  // See DraftRoom: pre-season, current_season_points is a copy of last
-  // season's, so the honest column to show is the one that is actually true.
-  const seasonUnderway = useMemo(() => gameweeks.some(g => g.finished), [gameweeks])
 
   const freeCount = useMemo(
     () => (players ?? []).filter(p => !p.owner_member_id).length, [players])
@@ -204,13 +227,26 @@ export default function Players () {
 
       {players === null ? <Loading rows={10} /> : (
         <div className="mt-24">
+          {/* Both seasons, once there is a this-season to show. One column that
+              silently swapped meaning when the season began was how this page
+              came to be ranked by figures it wasn't displaying. The headers are
+              the sort: there is nowhere else on the row to put it, and a column
+              you can order by is the one place people look for it. */}
           <div className="thead">
             <span className="grow">Player</span>
             <span style={{ width: 62 }}>Next</span>
             {scope === 'all' && <span style={{ width: 76 }}>Owner</span>}
-            <span style={{ width: 40, textAlign: 'right' }}>
-              {seasonUnderway ? 'Pts' : '25/26'}
-            </span>
+            {seasonUnderway && (
+              <button type="button" className={`sort-th ${sort === 'this' ? 'on' : ''}`}
+                aria-pressed={sort === 'this'} onClick={() => setSort('this')}>
+                This
+              </button>
+            )}
+            <button type="button" className={`sort-th ${!seasonUnderway || sort === 'last' ? 'on' : ''}`}
+              aria-pressed={sort === 'last'} onClick={() => setSort('last')}
+              disabled={!seasonUnderway}>
+              Last
+            </button>
           </div>
           {/* Six hundred players is a 14,000px page if the list is left to
               grow. It scrolls inside its own pane instead. */}
@@ -250,8 +286,21 @@ export default function Players () {
                         {free ? 'Free' : p.owner_member_id === me.id ? 'You' : p.owner_team_name}
                       </span>
                     )}
-                    <span className="num small" style={{ width: 40, textAlign: 'right', fontWeight: 600 }}>
-                      {seasonUnderway ? p.current_season_points : p.prev_season_points}
+                    {seasonUnderway && (
+                      <span className="num small" style={{
+                        width: 40, textAlign: 'right',
+                        fontWeight: sort === 'this' ? 700 : 600,
+                        color: sort === 'this' ? 'var(--fg)' : 'var(--fg-3)'
+                      }}>
+                        {p.current_season_points}
+                      </span>
+                    )}
+                    <span className="num small" style={{
+                      width: 40, textAlign: 'right',
+                      fontWeight: !seasonUnderway || sort === 'last' ? 700 : 600,
+                      color: !seasonUnderway || sort === 'last' ? 'var(--fg)' : 'var(--fg-3)'
+                    }}>
+                      {p.prev_season_points}
                     </span>
                   </button>
                 </li>

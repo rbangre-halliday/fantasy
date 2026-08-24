@@ -60,17 +60,26 @@ async function fetchLookups (): Promise<Lookups> {
   const [teams, fixtures] = await Promise.all([
     supabase.from('epl_teams').select('id, code, short_name'),
     supabase.from('fixtures')
-      .select('gw, kickoff, home_team, away_team, finished')
-      .eq('finished', false)
+      // Not `finished = false`. That is FPL's "bonus confirmed" flag and it
+      // lags full time by up to a day, so the morning after Sunderland played
+      // Ipswich this lookup still called Ipswich their next opponent. A fixture
+      // that has kicked off is not next, whatever its bonus is doing.
+      .select('gw, kickoff, home_team, away_team, started')
+      .eq('started', false)
       .order('gw')
+      .order('kickoff')
   ])
 
   const shortOf = new Map<number, string>(
     (teams.data ?? []).map(t => [t.id as number, t.short_name as string]))
 
-  // First unfinished fixture per team, in gameweek order.
+  // First fixture per team that is still to be played, in gameweek order.
+  // `started` is set by FPL at kick-off; the clock is the backstop for the gap
+  // between a match beginning and the next sync noticing.
+  const now = Date.now()
   const nextFixture = new Map<number, NextFixture>()
   for (const f of fixtures.data ?? []) {
+    if (f.kickoff && Date.parse(f.kickoff as string) <= now) continue
     for (const [teamId, oppId, home] of [
       [f.home_team as number, f.away_team as number, true],
       [f.away_team as number, f.home_team as number, false]

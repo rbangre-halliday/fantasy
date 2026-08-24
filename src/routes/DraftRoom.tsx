@@ -123,11 +123,17 @@ export default function DraftRoom () {
    * Not "has anyone got points", which was the first guess and was wrong: FPL's
    * total_points still holds last season's figure until the new one kicks off,
    * so every player showed an identical "last" and "this", and two columns of
-   * the same number read as a bug rather than as data. Whether a gameweek has
-   * finished is the authoritative signal, and it comes from FPL directly.
+   * the same number read as a bug rather than as data.
+   *
+   * Nor gameweeks.finished, which was the second and is wrong for the opposite
+   * reason: that is FPL's "bonus confirmed" flag and it lags full time by up to
+   * a day, so two days into gameweek 1 — nine matches played — this still said
+   * pre-season. A passed deadline is the signal. It comes from FPL, it is never
+   * revised afterwards, and it is the moment the football starts counting.
    */
   const seasonUnderway = useMemo(
-    () => gameweeks.some(g => g.finished), [gameweeks])
+    () => gameweeks.some(g => g.finished || Date.parse(g.deadline) < Date.now()),
+    [gameweeks])
 
   /**
    * How many picks until it's your turn again.
