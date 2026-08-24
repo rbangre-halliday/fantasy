@@ -283,7 +283,8 @@ function Composer ({
         Up to three each way, and the same number both ways. Positions don’t have to
         match — every squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD, and the
         sixteenth player is a flex, so a trade goes through whenever both squads are
-        left legal.
+        left legal. A trade involving anyone who has already played takes effect next
+        gameweek; this week’s XIs are untouched either way.
       </Notice>
 
       <div className="mt-24">
@@ -317,8 +318,7 @@ function PickList ({ players, selected, onToggle }: {
       {sorted.map(p => (
         <li key={p.id}>
           <button
-            className={`list-row ${selected.includes(p.id) ? 'is-selected' : ''} ${p.locked ? 'is-disabled' : ''}`}
-            disabled={p.locked}
+            className={`list-row ${selected.includes(p.id) ? 'is-selected' : ''}`}
             onClick={() => onToggle(p.id)}>
             <PosChip pos={p.position} />
             <span className="grow truncate name">{p.web_name}</span>

@@ -165,11 +165,13 @@ const SECTIONS: Section[] = [
     title: 'Free agents',
     lede: 'Any Premier League player nobody in your league owns is a free agent. No budget, no waiver period, no bidding — first tap wins.',
     clauses: [
-      { text: <><b>Signings open the moment the draft is complete</b> and run to the end of the season.</> },
+      { text: <><b>Signings open the moment the draft is complete</b> and run to the end of the season — including during a gameweek. The market used to shut from Friday’s first kickoff until the gameweek was confirmed, which was most of every weekend; it doesn’t any more.</> },
       { text: <><b>Every signing is a swap.</b> You always hold sixteen players, so signing one means dropping one in the same move.</> },
       { text: <><b>Not like-for-like.</b> Sign a midfielder and drop a forward if you want — what matters is the squad you are left holding, not the two names in the move.</>, tone: 'yes' },
       no(<><b>But it must leave you legal.</b> If your flex is already spent on a fourth forward, signing a midfielder means dropping a midfielder or that forward. Dropping a defender would leave you four, and is refused.</>),
-      no(<><b>Neither player can be locked.</b> You can’t sign someone whose match has started, and you can’t drop someone of yours whose match has started.</>),
+      { text: <><b>You can sign anyone, whenever.</b> A player who has already kicked off isn’t off limits — he simply joins your squad next gameweek rather than this one.</>, tone: 'yes' },
+      { text: <><b>A gameweek keeps the XI it kicked off with.</b> Drop a man who has already played and his points stay yours; he was yours when he earned them. He’s a free agent immediately, and whoever signs him also only has him from next week, so nobody scores twice off one player.</> },
+      { text: <><b>The exception is a like-for-like swap of two players who haven’t played.</b> That one slots straight into this week’s XI — the shape doesn’t move, so nothing has to be recalculated. Your injured Sunday striker can still be replaced on Saturday night.</> },
       { text: <><b>The new player inherits the dropped player’s slot</b> — starter or bench, same place in your lineup. Where the two play different positions the XI is re-formed around him, so the eleven stay 1/4/4/2.</> },
       { text: <><b>The player you drop is a free agent immediately,</b> and anyone can sign him.</> }
     ]
@@ -185,7 +187,8 @@ const SECTIONS: Section[] = [
       { text: <><b>Positions don’t have to match.</b> <i>Saka</i> for <i>Saliba</i> is a real offer now — whether it goes through depends on where the two of you keep your flex, not on the trade.</>, tone: 'yes' },
       no(<><b>Both squads have to survive it.</b> A trade that would leave either manager below the floor at any position is refused, whichever side of it they are on.</>),
       no(<><b>Same number both ways.</b> Squads are sixteen, so one for one, two for two, or three for three.</>),
-      no(<><b>Nobody in the deal can be locked,</b> on either side. It’s checked when the trade is proposed and again when it’s accepted.</>),
+      { text: <><b>A trade involving someone who has played lands next gameweek</b> — for both sides at once, never one squad this week and the other the next.</> },
+      no(<><b>Both squads are checked when the trade is proposed and again when it’s accepted.</b> Somebody else’s signing in between can make a pending offer illegal, and it will be refused rather than quietly applied.</>),
       { text: <><b>Only the receiving manager can accept or reject;</b> only the proposer can cancel.</> },
       { text: <><b>Accepting kills the competing offers.</b> Any other pending trade involving a player who just moved is cancelled automatically.</> }
     ]
@@ -261,7 +264,7 @@ const ANSWERS: Array<{ q: string; a: string; to: string }> = [
   },
   {
     q: 'Can I sign anyone I like?',
-    a: 'Anyone nobody owns. You drop one to do it, and what you’re left with has to be a legal squad.',
+    a: 'Anyone nobody owns, even mid-gameweek. If he has played already he joins you next week.',
     to: 'market'
   }
 ]

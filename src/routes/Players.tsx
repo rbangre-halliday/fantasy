@@ -19,7 +19,7 @@ type Scope = 'free' | 'dropped' | 'all'
 const JUST_DROPPED_MS = 72 * 3600 * 1000
 
 export default function Players () {
-  const { league, me, gameweeks, refresh } = useLeague()
+  const { league, me, gameweeks, currentGw, nextGw, refresh } = useLeague()
   const { toast, fail } = useToast()
   const crests = useCrests()
 
@@ -125,10 +125,23 @@ export default function Players () {
   // forward or a midfielder, but not a defender: that would leave you four.
   const myCounts = useMemo(() => countByPos(mine), [mine])
   const droppable = useMemo(
-    () => signing
-      ? mine.filter(p => !p.locked && canSwap(myCounts, signing.position, p.position))
-      : [],
-    [mine, myCounts, signing])
+    () => signing ? mine.filter(p => canSwap(myCounts, signing.position, p.position)) : [],
+    [myCounts, mine, signing])
+
+  // Has a ball been kicked this gameweek? If anyone in the league is locked,
+  // yes — which is the same question gw_started() asks on the server.
+  const weekUnderway = useMemo(() => (players ?? []).some(p => p.locked), [players])
+
+  /**
+   * Which gameweek a signing would land on, mirroring add_drop(). A locked
+   * player is no longer unsignable — he just isn't yours until next week — so
+   * the interface has to say which week it is buying, every time.
+   */
+  const landsOn = useCallback((add: LeaguePlayer, drop: LeaguePlayer | undefined) => {
+    if (!weekUnderway) return currentGw
+    if (!drop) return nextGw
+    return add.position === drop.position && !add.locked && !drop.locked ? currentGw : nextGw
+  }, [weekUnderway, currentGw, nextGw])
 
   async function confirmSign () {
     if (!signing || dropId === null) return
@@ -151,7 +164,8 @@ export default function Players () {
         title="Players"
         meta={<>
           Free agency is first come, first served. Sign a player and you drop one,
-          leaving a legal squad. <Link className="rules-link" to="/rules#market">Signing rules</Link>
+          leaving a legal squad. Once a gameweek has started, signings are for the
+          next one. <Link className="rules-link" to="/rules#market">Signing rules</Link>
         </>}
         aside={
           <div style={{ textAlign: 'right' }}>
@@ -206,7 +220,7 @@ export default function Players () {
               return (
                 <li key={p.id}>
                   <button className={`list-row ${free ? '' : 'is-disabled'}`}
-                    disabled={!open || !free || p.locked}
+                    disabled={!open || !free}
                     onClick={() => { setSigning(p); setDropId(null) }}>
                     <Crest code={crests.teamCode.get(p.team_id ?? -1)} alt={p.club ?? ''} />
                     <PosChip pos={p.position} />
@@ -225,7 +239,7 @@ export default function Players () {
                         )}
                         {/* Icon alone: this line clips rather than wraps, and
                             a padlock on a row you cannot press says it. */}
-                        {p.locked && <span className="locked" title="Kicked off — locked until the gameweek finishes"><IconLock /></span>}
+                        {p.locked && <span className="locked" title={`Already played this gameweek — signing him now puts him in your squad from GW${nextGw}`}><IconLock /></span>}
                       </span>
                     </span>
                     <span className="fixture" style={{ width: 62 }}>
@@ -325,12 +339,24 @@ export default function Players () {
 
           {signing.news && <div className="mt-16"><Notice kind="warn">{signing.news}</Notice></div>}
 
+          {/* The one thing a manager must not have to work out for himself.
+              Signing used to be refused outright while a gameweek was on, so
+              there was never a week to name; now there always is. */}
+          <div className="mt-16">
+            <Notice kind={landsOn(signing, mine.find(p => p.id === dropId)) === currentGw ? undefined : 'warn'}>
+              {landsOn(signing, mine.find(p => p.id === dropId)) === currentGw
+                ? <>Takes effect in <b>GW{currentGw}</b>, straight into this week’s squad.</>
+                : <>Takes effect in <b>GW{nextGw}</b>. Gameweek {currentGw} is already
+                    being played, so its XI — and its points — stay exactly as they are.</>}
+            </Notice>
+          </div>
+
           <div className="mt-24">
-            <Eyebrow>Drop a {signing.position} to make room</Eyebrow>
+            <Eyebrow>Drop someone to make room</Eyebrow>
             {droppable.length === 0 ? (
               <Notice kind="error">
-                Every {signing.position} in your squad has already kicked off this
-                gameweek. Try again once the gameweek finishes.
+                Nobody in your squad can be dropped for a {signing.position} without
+                leaving you below the 2/5/5/3 minimum somewhere.
               </Notice>
             ) : (
               <ul className="list">
@@ -338,9 +364,13 @@ export default function Players () {
                   <li key={p.id}>
                     <button className={`list-row ${dropId === p.id ? 'is-selected' : ''}`}
                       onClick={() => setDropId(p.id)}>
+                      <PosChip pos={p.position} />
                       <span className="grow" style={{ minWidth: 0 }}>
                         <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
-                        <span className="club">{p.club_short}</span>
+                        <span className="club">
+                          {p.club_short}
+                          {p.locked && ` · played GW${currentGw}, keeps those points`}
+                        </span>
                       </span>
                       <span className="num small">{p.current_season_points}</span>
                     </button>
