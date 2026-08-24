@@ -1,0 +1,74 @@
+name: Deploy to Vercel
+
+# Vercel's own Git integration isn't connected to this repo: the Vercel account
+# and the GitHub account are different logins, and the integration needs its
+# GitHub identity to have write access here. Rather than reshuffle account
+# ownership, the deploy runs where the other automation already runs.
+#
+# `vercel deploy` uploads the source and builds on Vercel, which is what every
+# deployment of this project has done so far — the build is ~10s, and the
+# project's environment variables stay in one place instead of being pulled
+# into a runner.
+
+on:
+  push:
+    branches: [main]
+    # A README edit shouldn't cost a production deploy.
+    paths-ignore:
+      - '**.md'
+      - 'supabase/**'
+      - '.github/workflows/sync-fpl.yml'
+  workflow_dispatch:
+
+concurrency:
+  # Two pushes a minute apart: the second wins, and the first is abandoned
+  # mid-build rather than racing it to production.
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://fantasy-draft-bay.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The Vercel CLI is a devDependency, so the version that deploys is the
+      # version in package-lock.json rather than whatever is newest today.
+      - run: npm ci
+
+      # Fail before deploying rather than shipping a bundle that doesn't
+      # typecheck. `vercel deploy` runs its own build; this one is the gate.
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # Identifiers, not credentials — they name the project the token is
+          # allowed to deploy to. Kept here because `.vercel/` is gitignored.
+          VERCEL_ORG_ID: team_GdJ1yXdrE22JU3g0aVVrirjz
+          VERCEL_PROJECT_ID: prj_dxGicUGnTelJXChd6THaJzYI32vK
+        run: |
+          url=$(npx vercel deploy --prod --yes --token="$VERCEL_TOKEN")
+          echo "Deployed $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Deployed to production"
+            echo
+            echo "- commit \`${GITHUB_SHA:0:7}\`"
+            echo "- ${{ steps.deploy.outputs.url }}"
+            echo "- https://fantasy-draft-bay.vercel.app"
+          } >> "$GITHUB_STEP_SUMMARY"
