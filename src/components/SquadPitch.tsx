@@ -35,7 +35,7 @@ const kitUrl = (code: number, gk: boolean) =>
  */
 export default function SquadPitch ({
   players, capacity = SQUAD_CAPS, compact = false,
-  onSelect, selected, canSwap, points, locked
+  onSelect, selected, canSwap, points, locked, subbedOut
 }: {
   players: PitchPlayer[]
   /** Slots per position: the 2/5/5/4 squad by default, or 1/4/4/2 for an XI. */
@@ -47,6 +47,8 @@ export default function SquadPitch ({
   canSwap?: (id: number) => boolean
   points?: (id: number) => number | undefined
   locked?: (id: number) => boolean
+  /** Replaced off the bench: he stays in his slot, struck through, on nil. */
+  subbedOut?: (id: number) => boolean
 }) {
   // Goalkeepers at the bottom, forwards at the top — the way a formation is drawn.
   const rows: Position[] = ['FWD', 'MID', 'DEF', 'GK']
@@ -91,11 +93,13 @@ export default function SquadPitch ({
                 const isSel = selected === p.id
                 const swappable = canSwap?.(p.id) ?? false
                 const isLocked = locked?.(p.id) ?? false
+                const isSubbed = subbedOut?.(p.id) ?? false
                 const pts = points?.(p.id)
                 const cls = ['slot', 'filled',
                   isSel && 'is-selected',
                   swappable && 'is-swappable',
-                  isLocked && 'is-locked'].filter(Boolean).join(' ')
+                  isLocked && 'is-locked',
+                  isSubbed && 'is-subbed'].filter(Boolean).join(' ')
 
                 // Drawn once, whether or not it can be tapped: a slot that
                 // shows a score on your own squad and hides it on somebody
@@ -106,6 +110,9 @@ export default function SquadPitch ({
                     {p.kit && <img className="kit" src={kitUrl(p.kit, pos === 'GK')}
                       alt="" width={22} height={22} loading="lazy" decoding="async" />}
                     <span className="slot-name">{p.name}</span>
+                    {/* The one thing the pitch could not say before: this man
+                        did not play, and the bench has already covered him. */}
+                    {isSubbed && <span className="slot-sub">Subbed off</span>}
                     {pts !== undefined
                       ? <span className="slot-pts num">{pts}</span>
                       : (!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
@@ -220,6 +227,18 @@ export default function SquadPitch ({
            glow would be the only soft edge in the whole interface. */
         .slot.is-swappable { border-color: var(--uv); border-style: solid; }
         .slot.is-locked { opacity: .55; }
+        /* Struck through rather than dimmed: a subbed-out starter is not a
+           player you can't touch, he is a player whose nil has been covered.
+           Dimming would say the first thing. */
+        .slot.is-subbed .slot-name { text-decoration: line-through; opacity: .6; }
+        .slot.is-subbed .slot-pts { opacity: .5; }
+        .slot-sub {
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: #B79BC6;
+        }
         .slot-pts {
           font-size: 11px;
           font-weight: 700;

@@ -143,6 +143,7 @@ const SECTIONS: Section[] = [
     lede: 'You don’t have to be awake for kickoff. If a starter doesn’t play at all, your bench covers for him once the gameweek’s results land.',
     clauses: [
       { text: <><b>The trigger is zero minutes, not a bad score.</b> A starter who played and scored one point stays in. A starter who was benched, injured or suspended is replaced.</> },
+      { text: <><b>Nothing happens until his match is over.</b> A starter with a Monday night kick-off has no minutes yet, and that is not the same thing as a blank — his slot waits for him.</> },
       { text: <><b>Same position only,</b> so the formation never changes.</> },
       { text: <><b>Bench order decides who comes on</b> — the highest-priority substitute in that position who actually played.</> },
       { text: <><b>Each substitute can only come on once.</b></> },

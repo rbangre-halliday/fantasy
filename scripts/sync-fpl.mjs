@@ -118,6 +118,12 @@ async function main () {
     away_team: f.team_a,
     started: !!f.started,
     finished: !!f.finished,
+    // finished is FPL's "bonus confirmed", which can lag full time by a day —
+    // nine played gameweek-1 fixtures still reported false two days later.
+    // finished_provisional is the whistle, and it is what the automatic
+    // substitutions ask about: a starter is only a blank once his match is
+    // actually over, not merely because it hasn't kicked off yet.
+    finished_provisional: !!f.finished_provisional,
     // The result itself. FPL sends these on the same payload; nothing else
     // publishes the league table, so this is what predictions are scored on.
     home_score: f.team_h_score,

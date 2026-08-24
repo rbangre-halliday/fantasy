@@ -108,6 +108,12 @@ export interface SquadPlayer {
   fixture_count: number
   /** One entry per fixture played, or null until the sync job has been by. */
   breakdown: { fixture: number; stats: PointsItem[] }[] | null
+  /** A starter whose gameweek ended with no minutes, replaced off the bench. */
+  subbed_out: boolean
+  /** A substitute the bench order brought on for one of them. */
+  subbed_in: boolean
+  /** The other half of that pair — who came on for him, or who he came on for. */
+  sub_partner: number | null
 }
 
 export interface Standing {

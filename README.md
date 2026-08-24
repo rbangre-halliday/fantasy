@@ -97,8 +97,9 @@ client calls RPCs; it cannot write to a table directly.
 | Auto-pick | `best_available()` — highest previous-season points that still fits the squad |
 | Roster validity | The positional caps (2/5/5/4) sum to exactly 16, so "never exceed a cap" is enough on its own to guarantee a completable squad |
 | Player locking | `is_player_locked(player, gw)` — locked from that player's *own* kickoff, in that gameweek only, so next week's XI stays editable while this week runs |
-| Auto-substitutions | `member_gw_score()` walks the bench in priority order, same position only, formation unchanged |
-| Scoring | `player_gw_points` straight from FPL; only gameweeks `>= scoring_start_gw` count |
+| Auto-substitutions | `member_gw_subs()` walks the bench in priority order, same position only, formation unchanged. A starter is only a blank once `player_gw_done()` says his match is over — `fixtures.finished_provisional`, not `finished`, which FPL leaves false until bonus is confirmed |
+| Scoring | `player_gw_points` straight from FPL; only gameweeks `>= scoring_start_gw` count. `member_gw_score()` is defined on top of `member_gw_subs()`, so the number and the substitutions the squad screen draws cannot disagree |
+| Played matches | `finished or finished_provisional`, everywhere it matters — the Premier League table predictions are scored against reads the same way |
 
 Two consequences worth knowing, both falling out of the fixed 16-man squad:
 

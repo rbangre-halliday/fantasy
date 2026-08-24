@@ -41,7 +41,21 @@ export default function Squad () {
     () => (squad ?? []).filter(p => p.lineup_status !== 'starter')
       .sort((a, b) => (a.bench_priority ?? 99) - (b.bench_priority ?? 99)), [squad])
 
-  const gwPoints = useMemo(() => starters.reduce((n, p) => n + p.gw_points, 0), [starters])
+  // The score is the XI *after* automatic substitutions — a starter who has
+  // been replaced scores nothing here and the substitute who replaced him
+  // scores instead. This used to be a plain sum of the eleven starters, which
+  // disagreed with the league table by however much the bench had covered:
+  // 48 here against 61 there, for the same squad in the same gameweek.
+  const gwPoints = useMemo(
+    () => (squad ?? [])
+      .filter(p => (p.lineup_status === 'starter' && !p.subbed_out) || p.subbed_in)
+      .reduce((n, p) => n + p.gw_points, 0),
+    [squad])
+
+  const nameById = useMemo(
+    () => new Map((squad ?? []).map(p => [p.player_id, p.web_name])), [squad])
+  const subCount = useMemo(
+    () => (squad ?? []).filter(p => p.subbed_in).length, [squad])
   const problem = squad ? xiProblem(starters) : null
 
   async function persist (next: SquadPlayer[]) {
@@ -123,6 +137,11 @@ export default function Squad () {
             <div className="figure" style={{ fontSize: 'clamp(44px, 11vw, 64px)' }}>
               {gwPoints}
             </div>
+            {subCount > 0 && (
+              <div className="tiny muted">
+                after {subCount} automatic sub{subCount > 1 ? 's' : ''}
+              </div>
+            )}
             {gwOptions.length > 1
               ? <Segmented value={String(gw)} onChange={v => setGw(Number(v))} options={gwOptions} />
               : <div className="eyebrow">Gameweek {gw}</div>}
@@ -175,6 +194,7 @@ export default function Squad () {
                 onSelect={setOpenId}
                 locked={id => !!squad!.find(x => x.player_id === id)?.locked}
                 points={id => squad!.find(x => x.player_id === id)?.gw_points}
+                subbedOut={id => !!squad!.find(x => x.player_id === id)?.subbed_out}
               />
               <p className="tiny muted" style={{ marginTop: 12 }}>
                 {isMine
@@ -189,6 +209,9 @@ export default function Squad () {
                 <ul className="list">
                   {bench.map((p, i) => (
                     <PlayerRow key={p.player_id} p={p} crest={crestOf(p)}
+                      note={p.subbed_in
+                        ? `On for ${nameById.get(p.sub_partner ?? -1) ?? 'a starter'}`
+                        : undefined}
                       lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
                       onTap={() => setOpenId(p.player_id)}
                       trailing={isMine ? (
@@ -205,7 +228,8 @@ export default function Squad () {
                 </ul>
                 <p className="tiny muted mt-8">
                   If a starter doesn’t play, the first eligible substitute in this order
-                  takes their place automatically.
+                  takes their place automatically — once that starter’s match is over,
+                  not before it kicks off.
                 </p>
               </div>
             </div>
@@ -225,6 +249,18 @@ export default function Squad () {
       <style>{`
         .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
         .squad-list-col { max-width: 640px; }
+        .sub-badge {
+          margin-left: 7px;
+          padding: 2px 6px;
+          border-radius: var(--r-sm);
+          border: 1px solid var(--uv-line);
+          background: var(--uv-block);
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: -.01em;
+          white-space: nowrap;
+          vertical-align: 1px;
+        }
         .bench-chip {
           display: inline-flex; align-items: center; gap: 7px;
           padding: 5px 9px; border-radius: var(--r-sm);
@@ -241,12 +277,14 @@ export default function Squad () {
 }
 
 function PlayerRow ({
-  p, lead, trailing, onTap, crest
+  p, lead, trailing, onTap, crest, note
 }: {
   p: SquadPlayer
   crest?: number
   lead?: React.ReactNode
   trailing?: React.ReactNode
+  /** "On for Pedro Porro" — the substitution, said on the row it happened to. */
+  note?: string
   onTap: () => void
 }) {
   const flag = availability(p.status)
@@ -262,7 +300,10 @@ function PlayerRow ({
         {lead}
         <Crest code={crest} size={18} alt={p.club_short ?? ''} />
         <span className="grow" style={{ minWidth: 0 }}>
-          <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
+          <span className="name truncate" style={{ display: 'block' }}>
+            {p.web_name}
+            {note && <span className="sub-badge">{note}</span>}
+          </span>
           <span className="row gap-6 tiny muted" style={{ marginTop: 2 }}>
             <span className="club">{p.club_short ?? '—'}</span>
             {p.locked
