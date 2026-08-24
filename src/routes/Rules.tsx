@@ -190,6 +190,7 @@ const SECTIONS: Section[] = [
       { text: <><b>Your error is the sum of |predicted − actual| across the twenty clubs</b>, against the live table. Lower is better, and it moves every week as the real table does.</> },
       { text: <><b>A perfect table is worth 100 bonus points; a random shuffle is worth nothing.</b> A random order averages 133 out, so that is the zero point and the payout runs evenly from there up to perfect: <i>100 × (1 − error ÷ 133)</i>, never below zero.</> },
       { text: <><b>The bonus counts in the league table</b> and updates all season. The table shows it beside your squad points rather than folded in silently.</> },
+      { text: <><b>It isn’t counting yet.</b> One round of matches is not a table worth scoring a season’s guess against — a club that won once sat fifth. Your bonus is shown on the Predict tab all the same, and starts counting towards the table once the real one has settled.</> },
       no(<><b>Miss the deadline and you score no bonus.</b> There’s no late entry.</>)
     ]
   },

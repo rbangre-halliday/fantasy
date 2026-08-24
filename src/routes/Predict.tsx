@@ -288,9 +288,9 @@ export default function Predict () {
           )}
 
           {/* Everyone's accuracy, which is the competitive part. Ordered by
-              bonus, because that is the number that moves the league table. */}
+              bonus, because that is the number the league table will move on. */}
           <div className="mt-24">
-            <Eyebrow>Bonus{seasonStarted ? '' : ' · once matches are played'}</Eyebrow>
+            <Eyebrow>Bonus{seasonStarted ? ' · not counting yet' : ' · once matches are played'}</Eyebrow>
             <div className="thead">
               <span className="grow">Manager</span>
               <span style={{ width: 62, textAlign: 'right' }}>Error</span>
@@ -377,9 +377,16 @@ export default function Predict () {
       )}
 
       <p className="tiny muted mt-24">
-        The bonus is part of the <Link className="rules-link" to={`/l/${league.id}/table`}>league
-        table</Link> total, and the rules are in the{' '}
-        <Link className="rules-link" to="/rules#predictions">rulebook</Link>.
+        {/* A bonus of 16 after one round of matches was rewarding Hull for
+            winning once, not for being predicted 19th. The number stays on
+            display — knowing what your entry is worth is the point of this
+            screen — but it is held out of the table until the real one has
+            enough football behind it to be worth guessing at. */}
+        This bonus is <b>not being added to the{' '}
+        <Link className="rules-link" to={`/l/${league.id}/table`}>league table</Link> yet</b> —
+        one round of matches is too little of a table to score a season’s guess
+        against. It’ll start counting once the real table has settled down. The
+        rules are in the <Link className="rules-link" to="/rules#predictions">rulebook</Link>.
       </p>
 
       <style>{`
