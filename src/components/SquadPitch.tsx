@@ -39,7 +39,7 @@ export default function SquadPitch ({
   // A fixed 2/5/5/4 would now draw an empty forward slot for a squad that has
   // legally spent its flex on a defender instead.
   players, capacity = squadShape(countByPos(players)), compact = false,
-  onSelect, selected, canSwap, points, locked, subbedOut
+  onSelect, selected, canSwap, points, locked, subbedOut, bench, dim
 }: {
   players: PitchPlayer[]
   /** Slots per position: the 2/5/5/4 squad by default, or 1/4/4/2 for an XI. */
@@ -53,6 +53,10 @@ export default function SquadPitch ({
   locked?: (id: number) => boolean
   /** Replaced off the bench: he stays in his slot, struck through, on nil. */
   subbedOut?: (id: number) => boolean
+  /** On the bench rather than in the XI — drawn as an outline, not a block. */
+  bench?: (id: number) => boolean
+  /** Not a candidate for whatever is being chosen. Pushed back, not hidden. */
+  dim?: (id: number) => boolean
 }) {
   // Goalkeepers at the bottom, forwards at the top — the way a formation is drawn.
   const rows: Position[] = ['FWD', 'MID', 'DEF', 'GK']
@@ -98,12 +102,16 @@ export default function SquadPitch ({
                 const swappable = canSwap?.(p.id) ?? false
                 const isLocked = locked?.(p.id) ?? false
                 const isSubbed = subbedOut?.(p.id) ?? false
+                const isBench = bench?.(p.id) ?? false
+                const isDim = dim?.(p.id) ?? false
                 const pts = points?.(p.id)
                 const cls = ['slot', 'filled',
                   isSel && 'is-selected',
                   swappable && 'is-swappable',
                   isLocked && 'is-locked',
-                  isSubbed && 'is-subbed'].filter(Boolean).join(' ')
+                  isSubbed && 'is-subbed',
+                  isBench && 'is-bench',
+                  isDim && 'is-dim'].filter(Boolean).join(' ')
 
                 // Drawn once, whether or not it can be tapped: a slot that
                 // shows a score on your own squad and hides it on somebody
@@ -131,6 +139,7 @@ export default function SquadPitch ({
                 return onSelect ? (
                   <button type="button" className={cls} key={p.id}
                     aria-pressed={isSel}
+                    disabled={isDim}
                     title={`${p.name} · ${p.club ?? ''}`}
                     onClick={() => onSelect(p.id)}>
                     {inner}
@@ -230,6 +239,17 @@ export default function SquadPitch ({
         /* Where this one can go. Dashed-to-solid on the accent is enough; a
            glow would be the only soft edge in the whole interface. */
         .slot.is-swappable { border-color: var(--uv); border-style: solid; }
+        /* The bench, drawn as an outline of a slot rather than a block of one.
+           A squad is eleven filled shapes and five hollow ones, which is the
+           distinction you are actually reasoning about when you pick someone to
+           drop — and it costs no space to say. */
+        .slot.is-bench { background: transparent; }
+        .slot.is-bench .slot-name { color: var(--fg-2); }
+        /* Not a candidate. Still drawn, because "why can't I drop a defender"
+           is answered by seeing the defenders sitting there greyed rather than
+           by their absence. */
+        .slot.is-dim { opacity: .28; border-color: var(--rule-2); background: transparent; }
+        .slot.is-dim .slot-name { color: var(--fg-3); }
         .slot.is-locked { opacity: .55; }
         /* Struck through rather than dimmed: a subbed-out starter is not a
            player you can't touch, he is a player whose nil has been covered.

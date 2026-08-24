@@ -327,6 +327,15 @@ a.eyebrow:hover, button.eyebrow:hover { color: var(--fg); }
    this is what says "there is more of this below". */
 .scroll-pane {
   max-height: min(62vh, 560px);
+  /* .list-row is 12px wider than its column on each side, so the hover wash
+     runs past the text rather than boxing it. A scrolling pane clips that
+     bleed, and the right-hand number ends up flush against the cut — the
+     "last season" column looked shaved off. Padding the pane by the same 12px
+     and pulling it back with a negative margin gives the bleed somewhere to go
+     without moving anything. */
+  padding: 0 12px;
+  margin: 0 -12px;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -1074,8 +1083,13 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 /* ---------------------------------------------------------- notices ------ */
 
 .notice {
-  display: flex;
-  gap: var(--s-3);
+  /* Prose, not a row. This was display:flex with a gap — presumably for an icon
+     that never arrived — which makes every text run and every <b> or <a> inside
+     it a separate flex item laid out side by side. "Takes effect in GW2." came
+     out as three columns. Any notice with inline markup was affected; the
+     lineups one on the squad screen had been splitting in two for as long as it
+     has existed. */
+  display: block;
   padding: 12px 14px;
   border-radius: var(--r-sm);
   border: 1px solid var(--rule);
@@ -1272,6 +1286,35 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 @media (min-width: 1000px) {
   .market-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: var(--s-7); }
   .market-squad { position: sticky; top: calc(var(--head-h) + 16px); align-self: start; }
+
+  /* Wider while a swap is live. The pitch stops being a reference thumbnail and
+     becomes the control, and sixteen names need the room to stay readable. */
+  .market-grid.is-swapping { grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); }
+}
+
+/* On a phone the swap panel is scrolled to when a signing starts, and the nav
+   is sticky over the top of it. Without this the player you just tapped ends up
+   underneath the header. */
+.market-squad { scroll-margin-top: calc(var(--head-h) + 12px); }
+
+/* The man you are signing, held above the pitch so he cannot scroll away —
+   which is what the dialog let him do the moment the drop list ran past nine. */
+.swap-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 9px 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--uv-line);
+  background: var(--uv-block);
+}
+.swap-head .name { font-weight: 650; letter-spacing: -.01em; }
+
+.swap-bar {
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule);
+  background: var(--stock-1);
 }
 
 /* --------------------------------------------------------------- trading ---

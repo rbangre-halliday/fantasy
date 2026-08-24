@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
-import { Crest, Eyebrow, IconLock, Loading, Notice, PageHead, PlayerPortrait, PosChip, SearchField, Segmented, Sheet } from '../components/ui'
+import { Crest, Eyebrow, IconLock, Loading, Notice, PageHead, PosChip, SearchField, Segmented } from '../components/ui'
 import SquadPitch from '../components/SquadPitch'
 import { useCrests } from '../lib/images'
 import { fixtureLabel } from '../lib/format'
 import { relativeTime } from '../lib/format'
 import { POSITIONS, POS_MIN, canSwap, countByPos, flexUsed } from '../lib/types'
-import type { LeaguePlayer, Move, Position } from '../lib/types'
+import type { LeaguePlayer, Move, Position, SquadPlayer } from '../lib/types'
 
 type Filter = 'ALL' | Position
 type Scope = 'free' | 'dropped' | 'all'
@@ -24,6 +24,10 @@ export default function Players () {
   const crests = useCrests()
 
   const [players, setPlayers] = useState<LeaguePlayer[] | null>(null)
+  // league_players knows ownership but not the XI. The pitch is the control
+  // now, and "is he starting" is the thing you weigh hardest when choosing who
+  // to let go, so the lineup has to come with it.
+  const [squad, setSquad] = useState<SquadPlayer[] | null>(null)
   const [filter, setFilter] = useState<Filter>('ALL')
   const [scope, setScope] = useState<Scope>('free')
   const [query, setQuery] = useState('')
@@ -32,15 +36,25 @@ export default function Players () {
   const [signing, setSigning] = useState<LeaguePlayer | null>(null)
   const [dropId, setDropId] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
+  const asideRef = useRef<HTMLElement | null>(null)
+
+  // The gameweek a signing would land in, and so the squad worth showing: if
+  // this week is already being played, the shape you are editing is next week's.
+  const swapGw = useMemo(
+    () => (gameweeks.some(g => g.id === currentGw && Date.parse(g.deadline) < Date.now())
+      ? nextGw : currentGw),
+    [gameweeks, currentGw, nextGw])
 
   const load = useCallback(async () => {
-    const [ps, ms] = await Promise.all([
+    const [ps, ms, sq] = await Promise.all([
       api.getLeaguePlayers(league.id),
-      api.getFreeAgentMoves(league.id, 25).catch(() => [] as Move[])
+      api.getFreeAgentMoves(league.id, 25).catch(() => [] as Move[]),
+      api.getSquad(me.id, swapGw).catch(() => null)
     ])
     setPlayers(ps)
     setMoves(ms)
-  }, [league.id])
+    setSquad(sq)
+  }, [league.id, me.id, swapGw])
 
   useEffect(() => { load().catch(fail) }, [load, fail])
 
@@ -136,10 +150,14 @@ export default function Players () {
     [players, justDropped])
 
   const mySquad = useMemo(
-    () => mine.map(p => ({
-      id: p.id, name: p.web_name, club: p.club_short, position: p.position,
-      kit: crests.teamCode.get(p.team_id ?? -1)
-    })), [mine, crests])
+    () => (squad ?? []).map(p => ({
+      id: p.player_id, name: p.web_name, club: p.club_short, position: p.position,
+      kit: crests.shortCode.get(p.club_short ?? '')
+    })), [squad, crests])
+
+  const benched = useMemo(
+    () => new Set((squad ?? []).filter(p => p.lineup_status !== 'starter').map(p => p.player_id)),
+    [squad])
 
   // Squad size is fixed at sixteen but the shape is not: fifteen of them are a
   // 2/5/5/3 floor and the last is a flex. So a signing no longer has to be
@@ -148,8 +166,13 @@ export default function Players () {
   // forward or a midfielder, but not a defender: that would leave you four.
   const myCounts = useMemo(() => countByPos(mine), [mine])
   const droppable = useMemo(
-    () => signing ? mine.filter(p => canSwap(myCounts, signing.position, p.position)) : [],
+    () => new Set(signing
+      ? mine.filter(p => canSwap(myCounts, signing.position, p.position)).map(p => p.id)
+      : []),
     [myCounts, mine, signing])
+
+  const dropped = useMemo(
+    () => mine.find(p => p.id === dropId) ?? null, [mine, dropId])
 
   // Has a ball been kicked this gameweek? If anyone in the league is locked,
   // yes — which is the same question gw_started() asks on the server.
@@ -165,6 +188,21 @@ export default function Players () {
     if (!drop) return nextGw
     return add.position === drop.position && !add.locked && !drop.locked ? currentGw : nextGw
   }, [weekUnderway, currentGw, nextGw])
+
+  /**
+   * Start a swap. On a phone the pitch is below the list rather than beside it,
+   * so the control the tap just armed would otherwise be off-screen — the tap
+   * would look like it had done nothing.
+   */
+  function beginSwap (p: LeaguePlayer) {
+    if (signing?.id === p.id) { setSigning(null); setDropId(null); return }
+    setSigning(p)
+    setDropId(null)
+    if (window.matchMedia('(max-width: 899px)').matches) {
+      requestAnimationFrame(() =>
+        asideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    }
+  }
 
   async function confirmSign () {
     if (!signing || dropId === null) return
@@ -206,7 +244,7 @@ export default function Players () {
       {/* Two columns, like the draft room: the market on the left, your own
           squad on the right. A signing costs you a player in the same
           position, so "who would I drop?" is part of reading this screen. */}
-      <div className="market-grid mt-24">
+      <div className={`market-grid mt-24 ${signing ? 'is-swapping' : ''}`}>
         <section>
           <div className="stack gap-12">
             <SearchField value={query} onChange={setQuery}
@@ -255,19 +293,19 @@ export default function Players () {
               const free = !p.owner_member_id
               return (
                 <li key={p.id}>
-                  <button className={`list-row ${free ? '' : 'is-disabled'}`}
+                  <button className={`list-row ${free ? '' : 'is-disabled'} ${signing?.id === p.id ? 'is-selected' : ''}`}
                     disabled={!open || !free}
-                    onClick={() => { setSigning(p); setDropId(null) }}>
+                    onClick={() => beginSwap(p)}>
                     <Crest code={crests.teamCode.get(p.team_id ?? -1)} alt={p.club ?? ''} />
                     <PosChip pos={p.position} />
                     <span className="grow" style={{ minWidth: 0 }}>
                       <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
                       <span className="row gap-6 tiny muted market-meta">
                         <span className="club">{p.club_short ?? '—'}</span>
-                        {/* On a phone this line has room for one fact. A player
-                            who was dropped an hour ago is the more useful one. */}
-                        {seasonUnderway && !justDropped.has(p.id) &&
-                          <span>· {p.prev_season_points} last season</span>}
+                        {/* Last season used to live here because it had no
+                            column. It has one now, and printing "84 last
+                            season" beside a column headed LAST reading 84 is
+                            just the number twice. */}
                         {free && justDropped.has(p.id) && (
                           <span className="dropped-chip">
                             Dropped {relativeTime(justDropped.get(p.id)!.created_at)}
@@ -312,20 +350,71 @@ export default function Players () {
       )}
         </section>
 
-        <aside className="market-squad">
-          <Eyebrow>Your squad</Eyebrow>
-          {/* compact here: in a 340px column the club line costs the width
-              that the name needs, and this pitch is reference rather than the
-              subject of the screen. */}
-          <SquadPitch players={mySquad} compact />
-          <p className="tiny muted" style={{ marginTop: 12 }}>
-            Signing a {filter === 'ALL' ? 'player' : filter} means dropping one. Every
-            squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD; the sixteenth is a
-            flex, and yours is{' '}
-            {flexUsed(myCounts) === 0
-              ? 'still free'
-              : `on your ${POSITIONS.find(x => myCounts[x] > POS_MIN[x])}`}.
-          </p>
+        <aside className="market-squad" ref={asideRef}>
+          {/* The swap happens here, on the shape, not in a dialog listing the
+              same names as words. Picking who to drop is a question about your
+              squad — who is starting, where you are thin, who the flex is
+              currently paying for — and every one of those is already drawn.
+              The old sheet covered this pitch with a scrolling list of nine
+              names in no order, captioned "played GW1, keeps those points"
+              seven times. */}
+          <Eyebrow>{signing ? `Replace with ${signing.web_name}` : 'Your squad'}</Eyebrow>
+
+          {signing && (
+            <div className="swap-head mt-8">
+              <Crest code={crests.teamCode.get(signing.team_id ?? -1)} size={22} alt={signing.club ?? ''} />
+              <PosChip pos={signing.position} />
+              <span className="grow truncate name">{signing.web_name}</span>
+              <span className="tiny muted">{fixtureLabel(crests.nextFixture.get(signing.team_id ?? -1))}</span>
+            </div>
+          )}
+
+          <div className="mt-8">
+            <SquadPitch
+              players={mySquad}
+              compact={!signing}
+              bench={id => benched.has(id)}
+              {...(signing
+                ? {
+                    onSelect: setDropId,
+                    selected: dropId,
+                    canSwap: id => droppable.has(id),
+                    dim: id => !droppable.has(id)
+                  }
+                : {})} />
+          </div>
+
+          {signing ? (
+            <div className="swap-bar mt-12">
+              <p className="tiny muted" style={{ margin: 0 }}>
+                {dropped
+                  ? <><b>{signing.web_name}</b> in, <b>{dropped.web_name}</b> out
+                      {landsOn(signing, dropped) === currentGw
+                        ? <> · from GW{currentGw}</>
+                        : <> · from GW{nextGw}, this week’s XI is untouched</>}</>
+                  : <>Tap anyone still lit to make room. The greyed-out players would
+                      leave you below the 2/5/5/3 minimum somewhere.</>}
+              </p>
+              <div className="row gap-8" style={{ marginTop: 10 }}>
+                <button className="btn ghost" onClick={() => { setSigning(null); setDropId(null) }}>
+                  Cancel
+                </button>
+                <button className="btn grow" disabled={busy || dropId === null}
+                  onClick={() => void confirmSign()}>
+                  {busy ? 'Signing…' : dropped ? `Sign ${signing.web_name}` : 'Pick who to drop'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="tiny muted" style={{ marginTop: 12 }}>
+              Tap a free agent to sign him; this pitch will show who you can drop.
+              Every squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD; the sixteenth
+              is a flex, and yours is{' '}
+              {flexUsed(myCounts) === 0
+                ? 'still free'
+                : `on your ${POSITIONS.find(x => myCounts[x] > POS_MIN[x])}`}.
+            </p>
+          )}
 
           {/* Who has moved, in the column where you decide whether to move.
               This used to live only at the bottom of the table screen, mixed
@@ -365,71 +454,6 @@ export default function Players () {
         </aside>
       </div>
 
-      {signing && (
-        <Sheet title={`Sign ${signing.web_name}`} onClose={() => setSigning(null)}
-          footer={
-            <>
-              <button className="btn ghost" onClick={() => setSigning(null)}>Cancel</button>
-              <button className="btn" disabled={busy || dropId === null} onClick={() => void confirmSign()}>
-                {busy ? 'Signing…' : 'Confirm'}
-              </button>
-            </>
-          }>
-          <div className="row gap-12">
-            <PlayerPortrait badge={crests.teamCode.get(signing.team_id ?? -1)} />
-            <div>
-              <div className="row gap-8"><PosChip pos={signing.position} /></div>
-              <div className="h3" style={{ marginTop: 6 }}>{signing.first_name} {signing.second_name}</div>
-              <div className="club">
-                {signing.club} · next {fixtureLabel(crests.nextFixture.get(signing.team_id ?? -1))}
-              </div>
-            </div>
-          </div>
-
-          {signing.news && <div className="mt-16"><Notice kind="warn">{signing.news}</Notice></div>}
-
-          {/* The one thing a manager must not have to work out for himself.
-              Signing used to be refused outright while a gameweek was on, so
-              there was never a week to name; now there always is. */}
-          <div className="mt-16">
-            <Notice kind={landsOn(signing, mine.find(p => p.id === dropId)) === currentGw ? undefined : 'warn'}>
-              {landsOn(signing, mine.find(p => p.id === dropId)) === currentGw
-                ? <>Takes effect in <b>GW{currentGw}</b>, straight into this week’s squad.</>
-                : <>Takes effect in <b>GW{nextGw}</b>. Gameweek {currentGw} is already
-                    being played, so its XI — and its points — stay exactly as they are.</>}
-            </Notice>
-          </div>
-
-          <div className="mt-24">
-            <Eyebrow>Drop someone to make room</Eyebrow>
-            {droppable.length === 0 ? (
-              <Notice kind="error">
-                Nobody in your squad can be dropped for a {signing.position} without
-                leaving you below the 2/5/5/3 minimum somewhere.
-              </Notice>
-            ) : (
-              <ul className="list">
-                {droppable.map(p => (
-                  <li key={p.id}>
-                    <button className={`list-row ${dropId === p.id ? 'is-selected' : ''}`}
-                      onClick={() => setDropId(p.id)}>
-                      <PosChip pos={p.position} />
-                      <span className="grow" style={{ minWidth: 0 }}>
-                        <span className="name truncate" style={{ display: 'block' }}>{p.web_name}</span>
-                        <span className="club">
-                          {p.club_short}
-                          {p.locked && ` · played GW${currentGw}, keeps those points`}
-                        </span>
-                      </span>
-                      <span className="num small">{p.current_season_points}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </Sheet>
-      )}
     </div>
   )
 }
