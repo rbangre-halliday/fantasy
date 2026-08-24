@@ -39,7 +39,8 @@ export default function SquadPitch ({
   // A fixed 2/5/5/4 would now draw an empty forward slot for a squad that has
   // legally spent its flex on a defender instead.
   players, capacity = squadShape(countByPos(players)), compact = false,
-  onSelect, selected, canSwap, points, locked, subbedOut, bench, dim
+  onSelect, selected, canSwap, points, locked, subbedOut, bench, dim,
+  bind, dragId, overId
 }: {
   players: PitchPlayer[]
   /** Slots per position: the 2/5/5/4 squad by default, or 1/4/4/2 for an XI. */
@@ -57,6 +58,12 @@ export default function SquadPitch ({
   bench?: (id: number) => boolean
   /** Not a candidate for whatever is being chosen. Pushed back, not hidden. */
   dim?: (id: number) => boolean
+  /** Props from useDragSwap that make a slot draggable and droppable. */
+  bind?: (id: number) => Record<string, unknown>
+  /** The slot currently being dragged, drawn as the hole it left. */
+  dragId?: number | null
+  /** The slot under the pointer that would take the drop. */
+  overId?: number | null
 }) {
   // Goalkeepers at the bottom, forwards at the top — the way a formation is drawn.
   const rows: Position[] = ['FWD', 'MID', 'DEF', 'GK']
@@ -111,7 +118,9 @@ export default function SquadPitch ({
                   isLocked && 'is-locked',
                   isSubbed && 'is-subbed',
                   isBench && 'is-bench',
-                  isDim && 'is-dim'].filter(Boolean).join(' ')
+                  isDim && 'is-dim',
+                  dragId === p.id && 'is-dragging',
+                  overId === p.id && 'is-over'].filter(Boolean).join(' ')
 
                 // Drawn once, whether or not it can be tapped: a slot that
                 // shows a score on your own squad and hides it on somebody
@@ -136,12 +145,15 @@ export default function SquadPitch ({
                 // an interaction it cannot honour. A locked player is *not*
                 // disabled: he can no longer be moved, but he is the one you
                 // most want to open, because his points have started arriving.
+                // With a drag bound, the press is the gesture and the tap
+                // falls out of it — onClick as well would fire a second time on
+                // pointerup and reopen the sheet the drop just closed.
                 return onSelect ? (
                   <button type="button" className={cls} key={p.id}
                     aria-pressed={isSel}
                     disabled={isDim}
                     title={`${p.name} · ${p.club ?? ''}`}
-                    onClick={() => onSelect(p.id)}>
+                    {...(bind ? bind(p.id) : { onClick: () => onSelect(p.id) })}>
                     {inner}
                   </button>
                 ) : (
@@ -250,6 +262,21 @@ export default function SquadPitch ({
            by their absence. */
         .slot.is-dim { opacity: .28; border-color: var(--rule-2); background: transparent; }
         .slot.is-dim .slot-name { color: var(--fg-3); }
+        /* The slot a drag came out of, left as the hole it made rather than
+           still drawn full — you are moving him, so he should not be in two
+           places at once. */
+        .slot.is-dragging { opacity: .25; border-style: dashed; background: transparent; }
+        /* Where he would land. Filled accent, because at the end of a drag the
+           question is only ever "here?" and a border is a quieter yes than the
+           gesture deserves. */
+        .slot.is-over {
+          border-color: var(--uv);
+          background: var(--uv);
+        }
+        .slot.is-over .slot-name, .slot.is-over .slot-pts { color: var(--uv-ink); }
+        /* A drag is not a scroll. Without this a touch drag on the pitch pans
+           the page instead and the slot never moves. */
+        button.slot { touch-action: none; }
         .slot.is-locked { opacity: .55; }
         /* Struck through rather than dimmed: a subbed-out starter is not a
            player you can't touch, he is a player whose nil has been covered.

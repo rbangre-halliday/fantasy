@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as api from '../lib/api'
+import { useDragSwap } from '../lib/drag'
 import { useToast } from '../lib/toast'
 import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconChevron, IconLock, Loading, Notice, PageHead, Segmented } from '../components/ui'
@@ -91,6 +92,56 @@ export default function Squad () {
     setOpenId(null)
     void persist(next)
   }
+
+  /** Drop one bench player onto another: he takes that slot, the rest shuffle. */
+  function reorderBench (fromId: number, toId: number) {
+    const order = bench.map(p => p.player_id)
+    const from = order.indexOf(fromId)
+    const to = order.indexOf(toId)
+    if (from === -1 || to === -1 || from === to) return
+    order.splice(to, 0, ...order.splice(from, 1))
+    const next = squad!.map(p => {
+      const idx = order.indexOf(p.player_id)
+      return idx === -1 ? p : { ...p, bench_priority: idx + 1 }
+    })
+    setSquad(next)
+    void persist(next)
+  }
+
+  /**
+   * What a drag would do, if anything. Bench onto bench reorders; across the
+   * line it is a substitution, which is same-position only and needs both men
+   * free — the same rule the player sheet applies, asked from the other end.
+   */
+  const canDropOn = useCallback((fromId: number, toId: number) => {
+    const a = (squad ?? []).find(p => p.player_id === fromId)
+    const b = (squad ?? []).find(p => p.player_id === toId)
+    if (!a || !b || !isMine || a.locked || b.locked) return false
+    const aStart = a.lineup_status === 'starter'
+    const bStart = b.lineup_status === 'starter'
+    if (!aStart && !bStart) return true
+    if (aStart && bStart) return false
+    return a.position === b.position
+  }, [squad, isMine])
+
+  const onDropOn = useCallback((fromId: number, toId: number) => {
+    const a = (squad ?? []).find(p => p.player_id === fromId)
+    const b = (squad ?? []).find(p => p.player_id === toId)
+    if (!a || !b) return
+    if (a.lineup_status !== 'starter' && b.lineup_status !== 'starter') {
+      reorderBench(fromId, toId)
+    } else {
+      swap(fromId, toId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [squad])
+
+  const { drag, bind } = useDragSwap({
+    canDrop: canDropOn,
+    onDrop: onDropOn,
+    onTap: setOpenId,
+    locked: id => !isMine || !!(squad ?? []).find(p => p.player_id === id)?.locked
+  })
 
   function moveBench (playerId: number, dir: -1 | 1) {
     const order = bench.map(p => p.player_id)
@@ -192,6 +243,9 @@ export default function Squad () {
                   position: p.position, kit: crestOf(p)
                 }))}
                 onSelect={setOpenId}
+                bind={bind}
+                dragId={drag.id}
+                overId={drag.over}
                 locked={id => !!squad!.find(x => x.player_id === id)?.locked}
                 points={id => squad!.find(x => x.player_id === id)?.gw_points}
                 subbedOut={id => !!squad!.find(x => x.player_id === id)?.subbed_out}
@@ -213,6 +267,9 @@ export default function Squad () {
                         ? `On for ${nameById.get(p.sub_partner ?? -1) ?? 'a starter'}`
                         : undefined}
                       lead={<span className="num tiny muted" style={{ width: 16 }}>{i + 1}</span>}
+                      bind={isMine && !p.locked ? bind : undefined}
+                      dragging={drag.id === p.player_id}
+                      over={drag.over === p.player_id}
                       onTap={() => setOpenId(p.player_id)}
                       trailing={isMine ? (
                         <span className="row-aside">
@@ -235,6 +292,14 @@ export default function Squad () {
             </div>
           </div>
         </>
+      )}
+
+      {/* What you are holding. Rendered at the root so no ancestor's overflow or
+          stacking context can clip it out of the drag. */}
+      {drag.id !== null && (
+        <div className="drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          {squad?.find(p => p.player_id === drag.id)?.web_name}
+        </div>
       )}
 
       {opened && (
@@ -261,6 +326,43 @@ export default function Squad () {
           white-space: nowrap;
           vertical-align: 1px;
         }
+        /* The grip. Dim until the row is hovered, because five of these down a
+           list is a texture and the list is meant to read as names. */
+        .drag-ghost {
+          position: fixed;
+          z-index: 80;
+          /* Above the pointer, not on it. Centred, the label covers the slot
+             you are aiming at — the one thing you need to see to know whether
+             to let go. */
+          transform: translate(-50%, calc(-100% - 14px));
+          pointer-events: none;
+          padding: 7px 11px;
+          border-radius: var(--r-sm);
+          border: 1px solid var(--uv);
+          background: var(--uv);
+          color: var(--uv-ink);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: -.01em;
+          white-space: nowrap;
+        }
+        .grip {
+          display: inline-flex;
+          color: var(--fg-3);
+          opacity: .35;
+          touch-action: none;
+          cursor: grab;
+          margin-right: 2px;
+          transition: opacity .15s var(--ease);
+        }
+        .list-row:hover .grip { opacity: .8; }
+        .grip:active { cursor: grabbing; }
+        li.is-dragging { opacity: .35; }
+        /* The gap the row would drop into, drawn on the row it would displace. */
+        li.is-over .list-row {
+          background: var(--uv-block);
+          box-shadow: inset 0 2px 0 var(--uv);
+        }
         .bench-chip {
           display: inline-flex; align-items: center; gap: 7px;
           padding: 5px 9px; border-radius: var(--r-sm);
@@ -277,7 +379,7 @@ export default function Squad () {
 }
 
 function PlayerRow ({
-  p, lead, trailing, onTap, crest, note
+  p, lead, trailing, onTap, crest, note, bind, dragging, over
 }: {
   p: SquadPlayer
   crest?: number
@@ -285,6 +387,9 @@ function PlayerRow ({
   trailing?: React.ReactNode
   /** "On for Pedro Porro" — the substitution, said on the row it happened to. */
   note?: string
+  bind?: (id: number) => Record<string, unknown>
+  dragging?: boolean
+  over?: boolean
   onTap: () => void
 }) {
   const flag = availability(p.status)
@@ -293,11 +398,25 @@ function PlayerRow ({
     // The reorder controls sit *beside* the row's hit target, not inside it.
     // Nested buttons are invalid HTML, and a browser that recovers from them
     // does so by making the inner control unreachable by keyboard.
-    <li className={trailing ? 'row-with-aside' : undefined}>
+    <li className={[trailing && 'row-with-aside', dragging && 'is-dragging',
+                    over && 'is-over'].filter(Boolean).join(' ') || undefined}>
       {/* A locked row still opens: it can't be moved, but it is the row whose
           points you most want itemised. */}
-      <button className={`list-row ${p.locked ? 'is-disabled' : ''}`} onClick={onTap}>
+      <button className={`list-row ${p.locked ? 'is-disabled' : ''}`}
+        {...(bind ? bind(p.player_id) : { onClick: onTap })}>
         {lead}
+        {/* On touch only a handle starts a drag, so the list can still be
+            scrolled by touching a row. A mouse drags from anywhere on it, so
+            this is a grip on phones and an affordance on desktop. */}
+        {bind && (
+          <span className="grip" data-drag-handle aria-hidden="true">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+              {[0, 1].map(c => [0, 1, 2].map(r => (
+                <circle key={`${c}-${r}`} cx={1.5 + c * 7} cy={3 + r * 5} r="1.35" />
+              )))}
+            </svg>
+          </span>
+        )}
         <Crest code={crest} size={18} alt={p.club_short ?? ''} />
         <span className="grow" style={{ minWidth: 0 }}>
           <span className="name truncate" style={{ display: 'block' }}>
