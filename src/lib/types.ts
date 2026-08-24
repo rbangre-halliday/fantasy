@@ -7,10 +7,52 @@ export type LineupStatus = 'starter' | 'substitute'
 export type TradeStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled'
 
 /** Squad shape and starting XI — the two numbers the whole game hangs off. */
-export const SQUAD_CAPS: Record<Position, number> = { GK: 2, DEF: 5, MID: 5, FWD: 4 }
+/**
+ * The squad floor: fifteen of the sixteen. The sixteenth is a flex and may go
+ * anywhere, so there is no single "squad shape" any more — 3/5/5/3, 2/6/5/3,
+ * 2/5/6/3 and 2/5/5/4 are all legal, and which one you hold is your business.
+ */
+export const POS_MIN: Record<Position, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 }
+/** The most you could ever hold at one position — the floor plus the flex. */
+export const POS_MAX: Record<Position, number> = { GK: 3, DEF: 6, MID: 6, FWD: 4 }
 export const XI_SHAPE: Record<Position, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 }
 export const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD']
 export const SQUAD_SIZE = 16
+
+export type PosCount = Record<Position, number>
+
+export const countByPos = (players: { position: Position }[]): PosCount =>
+  players.reduce((c, p) => ({ ...c, [p.position]: c[p.position] + 1 }),
+    { GK: 0, DEF: 0, MID: 0, FWD: 0 } as PosCount)
+
+/**
+ * Players held above the floor. This one number is the whole roster rule: a
+ * squad can be completed to sixteen legal players exactly when it is 0 or 1.
+ * (Fifteen floor slots and sixteen players, so holding t with f spent leaves
+ * 15 - t + f floor slots for 16 - t picks, which needs f <= 1.) The server
+ * computes the same thing in squad_flex_after(); this is only so the interface
+ * can refuse a move before the server has to.
+ */
+export const flexUsed = (c: PosCount): number =>
+  POSITIONS.reduce((n, p) => n + Math.max(0, c[p] - POS_MIN[p]), 0)
+
+/** Could this squad take one more at this position? */
+export const canAdd = (c: PosCount, pos: Position): boolean =>
+  flexUsed({ ...c, [pos]: c[pos] + 1 }) <= 1
+
+/** Would signing one and dropping the other leave a squad you may hold? */
+export const canSwap = (c: PosCount, add: Position, drop: Position): boolean =>
+  c[drop] > 0 && flexUsed({ ...c, [drop]: c[drop] - 1, [add]: c[add] + 1 }) <= 1
+
+/**
+ * Slots to draw for a squad: the floor at every position, widened wherever the
+ * flex has actually been spent. An incomplete squad draws fifteen and grows its
+ * sixteenth slot the moment you commit the flex, which is the honest picture —
+ * until then there is no telling which row it belongs in.
+ */
+export const squadShape = (c: PosCount): PosCount =>
+  POSITIONS.reduce((s, p) => ({ ...s, [p]: Math.max(POS_MIN[p], c[p]) }),
+    {} as PosCount)
 
 export interface League {
   id: string

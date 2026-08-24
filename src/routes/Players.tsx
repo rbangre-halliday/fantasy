@@ -9,7 +9,7 @@ import SquadPitch from '../components/SquadPitch'
 import { useCrests } from '../lib/images'
 import { fixtureLabel } from '../lib/format'
 import { relativeTime } from '../lib/format'
-import { POSITIONS } from '../lib/types'
+import { POSITIONS, POS_MIN, canSwap, countByPos, flexUsed } from '../lib/types'
 import type { LeaguePlayer, Move, Position } from '../lib/types'
 
 type Filter = 'ALL' | Position
@@ -118,10 +118,17 @@ export default function Players () {
       kit: crests.teamCode.get(p.team_id ?? -1)
     })), [mine, crests])
 
-  // Squad size and shape are fixed, so signing a midfielder means dropping one.
+  // Squad size is fixed at sixteen but the shape is not: fifteen of them are a
+  // 2/5/5/3 floor and the last is a flex. So a signing no longer has to be
+  // like-for-like — it has to leave you with a squad you are allowed to hold.
+  // Sign a midfielder while your flex sits on a forward and you may drop that
+  // forward or a midfielder, but not a defender: that would leave you four.
+  const myCounts = useMemo(() => countByPos(mine), [mine])
   const droppable = useMemo(
-    () => signing ? mine.filter(p => p.position === signing.position && !p.locked) : [],
-    [mine, signing])
+    () => signing
+      ? mine.filter(p => !p.locked && canSwap(myCounts, signing.position, p.position))
+      : [],
+    [mine, myCounts, signing])
 
   async function confirmSign () {
     if (!signing || dropId === null) return
@@ -143,8 +150,8 @@ export default function Players () {
       <PageHead
         title="Players"
         meta={<>
-          Free agency is first come, first served. Sign a player and you drop one in the
-          same position. <Link className="rules-link" to="/rules#market">Signing rules</Link>
+          Free agency is first come, first served. Sign a player and you drop one,
+          leaving a legal squad. <Link className="rules-link" to="/rules#market">Signing rules</Link>
         </>}
         aside={
           <div style={{ textAlign: 'right' }}>
@@ -249,8 +256,12 @@ export default function Players () {
               subject of the screen. */}
           <SquadPitch players={mySquad} compact />
           <p className="tiny muted" style={{ marginTop: 12 }}>
-            Signing a {filter === 'ALL' ? 'player' : filter} means dropping one in the
-            same position — squads are a fixed 2/5/5/4.
+            Signing a {filter === 'ALL' ? 'player' : filter} means dropping one. Every
+            squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD; the sixteenth is a
+            flex, and yours is{' '}
+            {flexUsed(myCounts) === 0
+              ? 'still free'
+              : `on your ${POSITIONS.find(x => myCounts[x] > POS_MIN[x])}`}.
           </p>
 
           {/* Who has moved, in the column where you decide whether to move.

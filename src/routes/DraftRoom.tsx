@@ -9,7 +9,7 @@ import DraftBoard from '../components/DraftBoard'
 import { useCrests } from '../lib/images'
 import { useShortlist } from '../lib/shortlist'
 import { clock, fixtureLabel } from '../lib/format'
-import { POSITIONS, SQUAD_CAPS } from '../lib/types'
+import { POSITIONS, POS_MIN, canAdd, flexUsed } from '../lib/types'
 import type { DraftPick, LeaguePlayer, Position } from '../lib/types'
 
 type Filter = 'ALL' | 'SHORT' | Position
@@ -157,9 +157,15 @@ export default function DraftRoom () {
   /** The positions you still have room for, so the board can be narrowed. */
   const stillNeeded = useMemo(
     () => POSITIONS
-      .map(p => ({ pos: p, left: SQUAD_CAPS[p] - myCounts[p] }))
+      .map(p => ({ pos: p, left: Math.max(0, POS_MIN[p] - myCounts[p]) }))
       .filter(x => x.left > 0),
     [myCounts])
+
+  // Your one spare pick, and where it has gone. Until it is spent every
+  // position has room for one more than it needs; after that, only the
+  // position holding it does.
+  const spare = useMemo(() => flexUsed(myCounts) === 0, [myCounts])
+  const roomAt = useCallback((p: Position) => canAdd(myCounts, p), [myCounts])
 
   const mySquad = useMemo(
     () => (players ?? [])
@@ -351,7 +357,7 @@ export default function DraftRoom () {
                   { value: 'SHORT', label: `★ ${shortlistLeft}` },
                   ...POSITIONS.map(p => ({
                     value: p as Filter,
-                    label: myCounts[p] >= SQUAD_CAPS[p] ? `${p} · full` : p
+                    label: roomAt(p) ? p : `${p} · full`
                   }))
                 ]}
               />
@@ -369,7 +375,7 @@ export default function DraftRoom () {
                     thousands of pixels tall. */}
                 <ul className="scroll-pane">
                   {visible.map(p => {
-                    const capped = myCounts[p.position] >= SQUAD_CAPS[p.position]
+                    const capped = !roomAt(p.position)
                     const starred = shortlist.set.has(p.id)
                     return (
                       <li key={p.id} className="pick-row">
@@ -426,11 +432,20 @@ export default function DraftRoom () {
             <SquadPitch players={mySquad} />
             <div className="row gap-6 wrap mt-12" style={{ marginTop: 12 }}>
               {POSITIONS.map(p => (
+                // Counted against the floor, not against a cap. "FWD 3/3" with
+                // the flex still in hand does not mean you are done with
+                // forwards — it means you owe none. The chip below says what
+                // the spare pick is doing.
                 <span key={p} className="tiny muted num"
-                  style={{ opacity: myCounts[p] >= SQUAD_CAPS[p] ? .4 : 1 }}>
-                  {p} {myCounts[p]}/{SQUAD_CAPS[p]}
+                  style={{ opacity: roomAt(p) ? 1 : .4 }}>
+                  {p} {myCounts[p]}/{POS_MIN[p]}
                 </span>
               ))}
+              <span className="tiny num" style={{ opacity: spare ? 1 : .4 }}>
+                {spare
+                  ? '· flex free'
+                  : `· flex on ${POSITIONS.find(p => myCounts[p] > POS_MIN[p])}`}
+              </span>
             </div>
 
           </section>

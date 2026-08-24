@@ -1,5 +1,5 @@
 import type { Position } from '../lib/types'
-import { POSITIONS, SQUAD_CAPS } from '../lib/types'
+import { POSITIONS, countByPos, squadShape } from '../lib/types'
 
 export interface PitchPlayer {
   id: number
@@ -34,7 +34,11 @@ const kitUrl = (code: number, gk: boolean) =>
  * information, and the shape is legible without any of that.
  */
 export default function SquadPitch ({
-  players, capacity = SQUAD_CAPS, compact = false,
+  // Without an explicit capacity the pitch draws the shape this squad actually
+  // has: the floor at every position, plus the flex wherever its owner put it.
+  // A fixed 2/5/5/4 would now draw an empty forward slot for a squad that has
+  // legally spent its flex on a defender instead.
+  players, capacity = squadShape(countByPos(players)), compact = false,
   onSelect, selected, canSwap, points, locked, subbedOut
 }: {
   players: PitchPlayer[]

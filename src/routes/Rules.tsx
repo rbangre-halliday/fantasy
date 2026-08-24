@@ -37,7 +37,7 @@ const SHAPE: Array<[string, number, number, number]> = [
   ['GK', 2, 1, 1],
   ['DEF', 5, 4, 1],
   ['MID', 5, 4, 1],
-  ['FWD', 4, 2, 2]
+  ['FWD', 3, 2, 1]
 ]
 
 const SECTIONS: Section[] = [
@@ -62,7 +62,7 @@ const SECTIONS: Section[] = [
     clauses: [
       { text: <><b>Snake order.</b> Round one runs first to last, round two runs back the other way, and so on for all sixteen rounds. Everyone ends up with exactly sixteen players.</> },
       { text: <><b>One owner per player, per league.</b> If two managers tap the same name in the same instant, exactly one of them gets him and the other is told he’s just gone.</> },
-      { text: <><b>You can’t draft past a positional cap.</b> Once you hold two goalkeepers, goalkeepers stop being available to you. The caps add up to exactly sixteen, so obeying them is all it takes to finish with a legal squad.</> },
+      { text: <><b>You can’t draft yourself into an impossible squad.</b> You owe 2 GK, 5 DEF, 5 MID and 3 FWD, and you have exactly one pick spare. Spend it on a third keeper and keepers close; spend it nowhere and every position stays open one longer. The board greys out what you can no longer afford.</> },
       { text: <><b>A live draft is on a clock</b> — two minutes a pick by default. It’s the server’s clock, so a slow laptop can’t cost you time or buy you any.</> },
       { text: <><b>Miss the clock and the pick is made for you:</b> the highest-ranked available player, on last season’s points, who still fits your squad.</> },
       { text: <><b>A take-your-time draft has no clock at all.</b> It’s simply your turn until you take it, so a league spread across time zones can draft over a week. Same snake, same caps, no auto-picks.</> },
@@ -74,11 +74,11 @@ const SECTIONS: Section[] = [
     id: 'squad',
     nav: 'Squad',
     title: 'Squad and formation',
-    lede: 'Sixteen players, and the shape never changes all season. This one constraint is what makes every rule below it so strict.',
+    lede: 'Sixteen players: fifteen the game insists on, and one you place wherever you want him.',
     before: (
       <div className="rules-shape">
         <table>
-          <caption className="eyebrow">Fixed, all season</caption>
+          <caption className="eyebrow">The floor, plus one free</caption>
           <thead>
             <tr>
               <th scope="col">Position</th>
@@ -99,6 +99,12 @@ const SECTIONS: Section[] = [
           </tbody>
           <tfoot>
             <tr>
+              <th scope="row"><span className="pos FLEX">Flex</span></th>
+              <td className="num">1</td>
+              <td className="num">—</td>
+              <td className="num">1</td>
+            </tr>
+            <tr>
               <th scope="row">Total</th>
               <td className="num">16</td>
               <td className="num">11</td>
@@ -111,7 +117,10 @@ const SECTIONS: Section[] = [
     clauses: [
       { text: <><b>Your XI is always 1 GK, 4 DEF, 4 MID, 2 FWD.</b> There’s no 3-5-2 and no 4-3-3. The only weekly decision is which of your players fill those eleven slots.</> },
       { text: <><b>Your five substitutes sit in a numbered order,</b> one to five. That order decides who comes on when the automatic substitutions run.</> },
-      { text: <><b>Because 2/5/5/4 adds up to exactly sixteen,</b> any move that changed your positional mix would leave an illegal squad. That’s why signings and trades below have to be like-for-like.</> }
+      { text: <><b>Four of the bench are one of each</b> — a goalkeeper, a defender, a midfielder and a forward, covering every slot in your XI once.</> },
+      { text: <><b>The fifth is a flex, and he can be anything.</b> A sixth defender, a sixth midfielder, a fourth forward, even a third goalkeeper. Doubling up at a position is how you cover it twice in a week where it blanks twice — and it is the one shape decision that is yours.</> },
+      { text: <><b>So there are four legal squads:</b> 3/5/5/3, 2/6/5/3, 2/5/6/3 and 2/5/5/4. All of them are sixteen; all of them field the same XI.</> },
+      { text: <><b>A move is legal when what it leaves you with is legal.</b> That is the whole roster rule, and every signing and trade below is only ever this rule applied twice.</> }
     ]
   },
   {
@@ -158,9 +167,10 @@ const SECTIONS: Section[] = [
     clauses: [
       { text: <><b>Signings open the moment the draft is complete</b> and run to the end of the season.</> },
       { text: <><b>Every signing is a swap.</b> You always hold sixteen players, so signing one means dropping one in the same move.</> },
-      no(<><b>Like-for-like, always.</b> Sign a midfielder, drop a midfielder. Anything else would break the 2/5/5/4 shape and is refused.</>),
+      { text: <><b>Not like-for-like.</b> Sign a midfielder and drop a forward if you want — what matters is the squad you are left holding, not the two names in the move.</>, tone: 'yes' },
+      no(<><b>But it must leave you legal.</b> If your flex is already spent on a fourth forward, signing a midfielder means dropping a midfielder or that forward. Dropping a defender would leave you four, and is refused.</>),
       no(<><b>Neither player can be locked.</b> You can’t sign someone whose match has started, and you can’t drop someone of yours whose match has started.</>),
-      { text: <><b>The new player inherits the dropped player’s slot</b> — starter or bench, same place in your lineup.</> },
+      { text: <><b>The new player inherits the dropped player’s slot</b> — starter or bench, same place in your lineup. Where the two play different positions the XI is re-formed around him, so the eleven stay 1/4/4/2.</> },
       { text: <><b>The player you drop is a free agent immediately,</b> and anyone can sign him.</> }
     ]
   },
@@ -172,7 +182,9 @@ const SECTIONS: Section[] = [
     clauses: [
       { text: <><b>Trading opens once the draft is complete.</b></> },
       { text: <><b>One to three players each way.</b></> },
-      no(<><b>Position-balanced, position by position.</b> <i>Saka + Isak</i> for <i>Salah + Watkins</i> works — a midfielder and a forward each way. <i>Saka</i> for <i>Saliba</i> doesn’t.</>),
+      { text: <><b>Positions don’t have to match.</b> <i>Saka</i> for <i>Saliba</i> is a real offer now — whether it goes through depends on where the two of you keep your flex, not on the trade.</>, tone: 'yes' },
+      no(<><b>Both squads have to survive it.</b> A trade that would leave either manager below the floor at any position is refused, whichever side of it they are on.</>),
+      no(<><b>Same number both ways.</b> Squads are sixteen, so one for one, two for two, or three for three.</>),
       no(<><b>Nobody in the deal can be locked,</b> on either side. It’s checked when the trade is proposed and again when it’s accepted.</>),
       { text: <><b>Only the receiving manager can accept or reject;</b> only the proposer can cancel.</> },
       { text: <><b>Accepting kills the competing offers.</b> Any other pending trade involving a player who just moved is cancelled automatically.</> }
@@ -228,7 +240,7 @@ const SECTIONS: Section[] = [
       no(<><b>No captain or vice-captain.</b> Nothing is doubled.</>),
       no(<><b>No chips</b> — no wildcard, bench boost, triple captain or free hit.</>),
       no(<><b>No budget and no player prices.</b> Ownership comes from the draft, not from money.</>),
-      no(<><b>No transfer limits or points deductions.</b> Signings are unlimited; they just have to be like-for-like.</>),
+      no(<><b>No transfer limits or points deductions.</b> Signings are unlimited; they just have to leave you a legal squad.</>),
       no(<><b>No waivers and no bidding.</b> Free agents are first come, first served.</>),
       no(<><b>No shared players.</b> One owner each, all season.</>)
     ]
@@ -249,7 +261,7 @@ const ANSWERS: Array<{ q: string; a: string; to: string }> = [
   },
   {
     q: 'Can I sign anyone I like?',
-    a: 'Anyone nobody owns, but it’s like-for-like: to sign a midfielder you drop a midfielder.',
+    a: 'Anyone nobody owns. You drop one to do it, and what you’re left with has to be a legal squad.',
     to: 'market'
   }
 ]

@@ -6,7 +6,7 @@ import { useLeague } from '../components/LeagueLayout'
 import { Crest, Eyebrow, IconTrade, Loading, Notice, PageHead, PosChip, Sheet } from '../components/ui'
 import { useCrests } from '../lib/images'
 import { relativeTime } from '../lib/format'
-import { POSITIONS } from '../lib/types'
+import { POSITIONS, countByPos, flexUsed } from '../lib/types'
 import type { LeaguePlayer, Position, Trade, TradePlayerRow } from '../lib/types'
 
 const MAX_PER_SIDE = 3
@@ -232,19 +232,31 @@ function Composer ({
       : list.length >= MAX_PER_SIDE ? list : [...list, id])
   }
 
-  // Squads are a fixed 2/5/5/4, so a trade only stays legal if each side sends
-  // and receives the same positions. Say so before the server has to.
+  // Positions no longer have to match one for one. Fifteen of every squad is a
+  // 2/5/5/3 floor and the sixteenth is a flex, so a trade is legal when both
+  // squads are still legal afterwards — which depends on where each manager's
+  // flex already sits, not on the trade alone. Saka for Saliba goes through or
+  // doesn't depending on the two squads behind it, so say which side breaks.
   const balance = useMemo(() => {
-    const count = (ids: number[], pos: Position) =>
-      ids.filter(id => players.find(p => p.id === id)?.position === pos).length
+    const posOf = (ids: number[]) =>
+      ids.map(id => players.find(p => p.id === id)?.position).filter(Boolean) as Position[]
+    const after = (held: LeaguePlayer[], out: Position[], inc: Position[]) => {
+      const c = countByPos(held)
+      for (const x of out) c[x] -= 1
+      for (const x of inc) c[x] += 1
+      return flexUsed(c)
+    }
+    const out = posOf(offer)
+    const inc = posOf(request)
     const off: string[] = []
-    for (const pos of POSITIONS) {
-      const a = count(offer, pos)
-      const b = count(request, pos)
-      if (a !== b) off.push(`${pos} ${a}↔${b}`)
+    if (offer.length !== request.length) {
+      off.push(`${offer.length} for ${request.length} — a trade must be even`)
+    } else if (offer.length > 0) {
+      if (after(mine, out, inc) > 1) off.push('this would leave your squad short')
+      if (after(theirs, inc, out) > 1) off.push(`this would leave ${receiverName}'s squad short`)
     }
     return off
-  }, [offer, request, players])
+  }, [offer, request, players, mine, theirs, receiverName])
 
   const ready = offer.length > 0 && request.length > 0 && balance.length === 0
 
@@ -268,8 +280,10 @@ function Composer ({
         </>
       }>
       <Notice>
-        Up to three each way. Because every squad is a fixed 2/5/5/4, each side has to
-        send the same positions it receives.
+        Up to three each way, and the same number both ways. Positions don’t have to
+        match — every squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD, and the
+        sixteenth player is a flex, so a trade goes through whenever both squads are
+        left legal.
       </Notice>
 
       <div className="mt-24">

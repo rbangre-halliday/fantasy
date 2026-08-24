@@ -755,6 +755,9 @@ a.card:hover, button.card:hover { border-color: var(--rule-2); background: var(-
 /* Goalkeepers are the one position you can't substitute across, so they get
    the one differentiator. */
 .pos.GK { color: var(--fg); border-color: #4C4459; background: var(--stock-3); }
+/* The flex isn't a position, it's a slot you decide. Drawn as the outline of a
+   chip rather than a filled one. */
+.pos.FLEX { border-style: dashed; background: transparent; color: var(--fg-3); }
 
 .club {
   font-size: 11px;
