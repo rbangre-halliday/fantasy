@@ -45,6 +45,7 @@ export default function Players () {
       ? nextGw : currentGw),
     [gameweeks, currentGw, nextGw])
 
+
   const load = useCallback(async () => {
     const [ps, ms, sq] = await Promise.all([
       api.getLeaguePlayers(league.id),
@@ -174,9 +175,15 @@ export default function Players () {
   const dropped = useMemo(
     () => mine.find(p => p.id === dropId) ?? null, [mine, dropId])
 
-  // Has a ball been kicked this gameweek? If anyone in the league is locked,
-  // yes — which is the same question gw_started() asks on the server.
-  const weekUnderway = useMemo(() => (players ?? []).some(p => p.locked), [players])
+  // Whether the live gameweek has been played, and whether it is over.
+  //
+  // Not "is anyone locked", which was the first version and fails at exactly
+  // the wrong moment: the lock releases when a gameweek is confirmed, so from
+  // Monday night to Friday every player reads unlocked and this said the week
+  // had not started. A deadline that has passed is the honest test.
+  const liveGw = useMemo(() => gameweeks.find(g => g.id === currentGw), [gameweeks, currentGw])
+  const weekUnderway = !!liveGw && Date.parse(liveGw.deadline) < Date.now()
+  const weekOver = !!liveGw?.finished
 
   /**
    * Which gameweek a signing would land on, mirroring add_drop(). A locked
@@ -186,8 +193,12 @@ export default function Players () {
   const landsOn = useCallback((add: LeaguePlayer, drop: LeaguePlayer | undefined) => {
     if (!weekUnderway) return currentGw
     if (!drop) return nextGw
+    // Once the gameweek is confirmed, everyone who had a fixture has played it
+    // — the like-for-like exception cannot apply to any of them, whatever the
+    // lock flag currently says.
+    if (weekOver) return nextGw
     return add.position === drop.position && !add.locked && !drop.locked ? currentGw : nextGw
-  }, [weekUnderway, currentGw, nextGw])
+  }, [weekUnderway, weekOver, currentGw, nextGw])
 
   /**
    * Start a swap. On a phone the pitch is below the list rather than beside it,
