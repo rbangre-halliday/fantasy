@@ -225,8 +225,23 @@ export function Segmented<T extends string> ({
   value: T
   onChange: (v: T) => void
 }) {
+  const strip = useRef<HTMLDivElement | null>(null)
+
+  // The strip scrolls once it outgrows its column, and it starts at the left —
+  // so a gameweek picker in April would open on GW1 with the selected cell off
+  // the end, looking like the control had lost its selection. Bring it back
+  // into view instead. Scoped to the strip: scrollIntoView on the element
+  // would take the whole page with it.
+  useEffect(() => {
+    const el = strip.current
+    const cell = el?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!el || !cell) return
+    const left = cell.offsetLeft - (el.clientWidth - cell.offsetWidth) / 2
+    el.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
+  }, [value, options.length])
+
   return (
-    <div className="seg" role="group">
+    <div className="seg" role="group" ref={strip}>
       {options.map(o => (
         <button
           key={o.value}

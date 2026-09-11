@@ -9,13 +9,13 @@ import SquadPitch from '../components/SquadPitch'
 import PlayerSheet from '../components/PlayerSheet'
 import { useCrests } from '../lib/images'
 import { availability, gwFixtureLabel, kickoffLabel, xiProblem } from '../lib/format'
-import { XI_SHAPE } from '../lib/types'
-import type { SquadPlayer } from '../lib/types'
+import { FORMATIONS, POSITIONS, canSubIn, countByPos, formationLabel, xiShape } from '../lib/types'
+import type { PosCount, SquadPlayer } from '../lib/types'
 
 export default function Squad () {
   const { memberId } = useParams()
   const navigate = useNavigate()
-  const { league, members, me, currentGw, nextGw } = useLeague()
+  const { league, members, me, gameweeks, currentGw, nextGw } = useLeague()
   const { fail } = useToast()
   const crests = useCrests()
 
@@ -26,12 +26,19 @@ export default function Squad () {
   const [squad, setSquad] = useState<SquadPlayer[] | null>(null)
   const [openId, setOpenId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
+  // A gameweek that has kicked off keeps the shape it kicked off with, so this
+  // decides whether a substitution may change the formation or only fill a
+  // like-for-like slot. See 19_flex_formations.sql.
+  const [frozen, setFrozen] = useState(false)
 
   const load = useCallback(async () => {
     // ensure_lineup is idempotent; calling it here means a squad always has a
     // lineup to show, even for a gameweek nobody has opened yet.
     if (isMine) await api.ensureLineup(viewing.id, gw).catch(() => {})
-    setSquad(await api.getSquad(viewing.id, gw))
+    const [rows, started] = await Promise.all([
+      api.getSquad(viewing.id, gw), api.gwStarted(gw)])
+    setSquad(rows)
+    setFrozen(started)
   }, [viewing.id, gw, isMine])
 
   useEffect(() => { setSquad(null); setOpenId(null); load().catch(fail) }, [load, fail])
@@ -53,11 +60,17 @@ export default function Squad () {
       .reduce((n, p) => n + p.gw_points, 0),
     [squad])
 
+  // The formation, which is now a fact about the lineup rather than a constant.
+  const xi = useMemo(() => countByPos(starters), [starters])
+
   const nameById = useMemo(
     () => new Map((squad ?? []).map(p => [p.player_id, p.web_name])), [squad])
   const subCount = useMemo(
     () => (squad ?? []).filter(p => p.subbed_in).length, [squad])
   const problem = squad ? xiProblem(starters) : null
+  // Over, as opposed to merely begun. Both are frozen, but only one of them
+  // still has football left to swap a player into.
+  const played = gw < currentGw
 
   async function persist (next: SquadPlayer[]) {
     const nextStarters = next.filter(p => p.lineup_status === 'starter')
@@ -73,7 +86,83 @@ export default function Squad () {
     } finally { setSaving(false) }
   }
 
-  /** Swap a starter with a bench player of the same position. */
+  /**
+   * Can this substitute come on for that starter? Same position always can, and
+   * that is the only swap a gameweek already under way accepts: it keeps the
+   * shape it kicked off with. Otherwise the formation it would leave has to be
+   * one you are allowed to field.
+   */
+  const canSub = useCallback((starter: SquadPlayer, sub: SquadPlayer) =>
+    starter.position === sub.position ||
+    (!frozen && canSubIn(xi, starter.position, sub.position)), [frozen, xi])
+
+  /**
+   * The eleven this squad would field in a given shape, or null if it can't
+   * field it at all.
+   *
+   * Reaching a formation by swapping one man at a time works and is still how
+   * you do it on the pitch, but it makes you solve for the route: 4-4-2 to
+   * 5-2-3 is two swaps through 5-3-2, and picking the wrong first one leaves
+   * you at a shape the next swap is refused from. Naming the destination is the
+   * thing a manager actually wants, so this computes the whole XI at once.
+   *
+   * Locked men are the only real difficulty. One whose match has kicked off
+   * cannot cross the line in either direction, so a locked starter is in the XI
+   * whatever you pick and a locked substitute is out of it whatever you pick —
+   * which is what makes some shapes unreachable on a Sunday and is why this
+   * returns null rather than an approximation. Everyone else is free, and is
+   * taken current starters first so that changing shape moves as few players as
+   * it can: go 4-4-2 to 4-3-3 and your back four and your two forwards stay
+   * exactly where they were.
+   */
+  const xiFor = useCallback((shape: PosCount): SquadPlayer[] | null => {
+    if (!squad) return null
+    const picked: SquadPlayer[] = []
+    for (const pos of POSITIONS) {
+      const at = squad.filter(p => p.position === pos)
+      const fixed = at.filter(p => p.locked && p.lineup_status === 'starter')
+      if (fixed.length > shape[pos]) return null
+      const free = at.filter(p => !p.locked).sort((a, b) =>
+        Number(b.lineup_status === 'starter') - Number(a.lineup_status === 'starter') ||
+        (a.bench_priority ?? 0) - (b.bench_priority ?? 0))
+      const want = shape[pos] - fixed.length
+      if (free.length < want) return null
+      picked.push(...fixed, ...free.slice(0, want))
+    }
+    return picked
+  }, [squad])
+
+  /** Every shape in the band, and whether this squad can be put into it today. */
+  const shapes = useMemo(
+    () => FORMATIONS.map(f => ({ shape: f, label: formationLabel(f), can: !!xiFor(f) })),
+    [xiFor])
+
+  /** Put the XI into this shape. */
+  function reshape (shape: PosCount) {
+    const picked = xiFor(shape)
+    if (!picked) return
+    const starting = new Set(picked.map(p => p.player_id))
+    // Whoever was already a substitute keeps his place in the order, and
+    // whoever has just been dropped into it joins at the back. Bench order is a
+    // decision in its own right, and changing formation is not a reason to
+    // throw away the one you made.
+    const order = squad!
+      .filter(p => !starting.has(p.player_id))
+      .sort((a, b) =>
+        Number(a.lineup_status === 'starter') - Number(b.lineup_status === 'starter') ||
+        (a.bench_priority ?? 99) - (b.bench_priority ?? 99))
+      .map(p => p.player_id)
+
+    const next = squad!.map(p => starting.has(p.player_id)
+      ? { ...p, lineup_status: 'starter' as const, bench_priority: null }
+      : { ...p, lineup_status: 'substitute' as const,
+          bench_priority: order.indexOf(p.player_id) + 1 })
+    setSquad(next)
+    setOpenId(null)
+    void persist(next)
+  }
+
+  /** Swap a starter with a bench player: he comes on, that one goes off. */
   function swap (aId: number, bId: number) {
     const a = squad!.find(p => p.player_id === aId)!
     const b = squad!.find(p => p.player_id === bId)!
@@ -110,8 +199,9 @@ export default function Squad () {
 
   /**
    * What a drag would do, if anything. Bench onto bench reorders; across the
-   * line it is a substitution, which is same-position only and needs both men
-   * free — the same rule the player sheet applies, asked from the other end.
+   * line it is a substitution, which needs both men free and has to leave a
+   * legal shape behind — the same rule the player sheet applies, asked from
+   * the other end.
    */
   const canDropOn = useCallback((fromId: number, toId: number) => {
     const a = (squad ?? []).find(p => p.player_id === fromId)
@@ -121,8 +211,8 @@ export default function Squad () {
     const bStart = b.lineup_status === 'starter'
     if (!aStart && !bStart) return true
     if (aStart && bStart) return false
-    return a.position === b.position
-  }, [squad, isMine])
+    return canSub(aStart ? a : b, aStart ? b : a)
+  }, [squad, isMine, canSub])
 
   const onDropOn = useCallback((fromId: number, toId: number) => {
     const a = (squad ?? []).find(p => p.player_id === fromId)
@@ -157,20 +247,46 @@ export default function Squad () {
     void persist(next)
   }
 
-  /** Who could take this player's place: same position, other side, movable. */
-  const swapTargets = (p: SquadPlayer) => (squad ?? []).filter(o =>
-    o.player_id !== p.player_id &&
-    o.position === p.position &&
-    (o.lineup_status === 'starter') !== (p.lineup_status === 'starter') &&
-    !o.locked)
+  /**
+   * Who could take this player's place: the other side of the line, movable,
+   * and leaving a formation you are allowed to field.
+   */
+  const swapTargets = (p: SquadPlayer) => (squad ?? []).filter(o => {
+    if (o.player_id === p.player_id || o.locked) return false
+    const pStart = p.lineup_status === 'starter'
+    if ((o.lineup_status === 'starter') === pStart) return false
+    return canSub(pStart ? p : o, pStart ? o : p)
+  })
+
+  /** The formation a cross-position substitution would leave, or nothing. */
+  const shapeAfter = (starter: SquadPlayer, sub: SquadPlayer) =>
+    starter.position === sub.position
+      ? undefined
+      : formationLabel({ ...xi, [starter.position]: xi[starter.position] - 1,
+                              [sub.position]: xi[sub.position] + 1 })
 
   const opened = squad?.find(p => p.player_id === openId) ?? null
   const crestOf = (p: SquadPlayer) => crests.shortCode.get(p.club_short ?? '')
 
-  const gwOptions = [
-    { value: String(currentGw), label: `GW ${currentGw}` },
-    ...(nextGw !== currentGw ? [{ value: String(nextGw), label: `GW ${nextGw}` }] : [])
-  ]
+  // Every gameweek the league has scored, plus the one being built.
+  //
+  // This used to offer the current gameweek and the next one and nothing else,
+  // which quietly made the season unreadable: a played gameweek keeps the XI it
+  // kicked off with — that is the whole point of the freeze in
+  // 16_signings_next_week.sql — and there was no way to look at it. member_squad
+  // takes any gameweek and always could; only the picker was short.
+  //
+  // Scoring start is the floor because gameweeks before it are not part of this
+  // league's season, and min() with the current one keeps the control honest if
+  // scoring hasn't begun yet.
+  const firstGw = Math.min(league.scoring_start_gw, currentGw)
+  const gwOptions = useMemo(() => {
+    const ids = gameweeks
+      .map(g => g.id)
+      .filter(id => id >= firstGw && id <= Math.max(currentGw, nextGw))
+      .sort((a, b) => a - b)
+    return (ids.length ? ids : [currentGw]).map(id => ({ value: String(id), label: `GW ${id}` }))
+  }, [gameweeks, firstGw, currentGw, nextGw])
 
   return (
     <div className="page">
@@ -217,13 +333,36 @@ export default function Squad () {
           {isMine && (
             <div className="mt-16 stack gap-8">
               {problem
-                ? <Notice kind="warn">{problem} — your XI must be 1 GK, 4 DEF, 4 MID, 2 FWD.</Notice>
+                ? <Notice kind="warn">
+                    {problem} — an XI is 1 GK, 3–5 DEF, 2–5 MID and 1–3 FWD.
+                  </Notice>
                 // The how-to lives under the pitch, where the tapping
-                // happens. This slot is for the rule you cannot see.
-                : <Notice>
-                    Each player locks when his own match kicks off — in that gameweek only.{' '}
-                    <Link className="rules-link" to="/rules#lineups">Why can’t I move him?</Link>
-                  </Notice>}
+                // happens. These slots are for the rules you cannot see.
+                // A gameweek in the past is a record, not a team sheet, and
+                // telling its manager that like-for-like swaps still go through
+                // would be false in the one case it most looks true.
+                : played
+                  ? <Notice>
+                      Gameweek {gw} has been played, and this is the {formationLabel(xi)} it
+                      was scored in — a gameweek keeps the XI and the shape it kicked off
+                      with. Pick your formation in{' '}
+                      <button className="rules-link" onClick={() => setGw(nextGw)}>
+                        gameweek {nextGw}
+                      </button>.
+                    </Notice>
+                  : frozen
+                    ? <Notice>
+                        Gameweek {gw} has kicked off, so it keeps its {formationLabel(xi)}.
+                        Like-for-like swaps still go through until each player’s own
+                        match starts; change shape in a gameweek that hasn’t begun.{' '}
+                        <Link className="rules-link" to="/rules#lineups">How locking works</Link>
+                      </Notice>
+                    : <Notice>
+                        Play any of the eight formations — pick one under the pitch, or
+                        drag a substitute onto the man he replaces. Each player locks when
+                        his own match kicks off, in that gameweek only.{' '}
+                        <Link className="rules-link" to="/rules#squad">Which shapes are legal?</Link>
+                      </Notice>}
               {saving && <div className="tiny muted">Saving…</div>}
             </div>
           )}
@@ -235,9 +374,9 @@ export default function Squad () {
                 a tap anywhere opens the player: his fixture, how his points
                 were scored, and the substitution if he can still be moved. */}
             <aside className="squad-pitch-col">
-              <Eyebrow>Starting XI · 4-4-2</Eyebrow>
+              <Eyebrow>Starting XI · {formationLabel(xi)}</Eyebrow>
               <SquadPitch
-                capacity={XI_SHAPE}
+                capacity={xiShape(xi)}
                 players={starters.map(p => ({
                   id: p.player_id, name: p.web_name, club: p.club_short,
                   position: p.position, kit: crestOf(p)
@@ -250,6 +389,32 @@ export default function Squad () {
                 points={id => squad!.find(x => x.player_id === id)?.gw_points}
                 subbedOut={id => !!squad!.find(x => x.player_id === id)?.subbed_out}
               />
+              {/* The shape, named rather than assembled. Directly under the
+                  pitch because the pitch is what it rearranges — press one and
+                  the rows above redraw. */}
+              {isMine && !frozen && (
+                <>
+                  <div className="seg formations" role="group" aria-label="Formation">
+                    {shapes.map(s => (
+                      <button key={s.label}
+                        aria-pressed={s.label === formationLabel(xi)}
+                        disabled={saving || !s.can}
+                        title={s.can
+                          ? `Play ${s.label}`
+                          : `${s.label} isn’t reachable now — too many of your players have already kicked off to move into it.`}
+                        onClick={() => reshape(s.shape)}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                  {shapes.some(s => !s.can) && (
+                    <p className="tiny muted" style={{ marginTop: 8 }}>
+                      The shapes you can’t press need players who have already kicked
+                      off to change places. They open up again next gameweek.
+                    </p>
+                  )}
+                </>
+              )}
               <p className="tiny muted" style={{ marginTop: 12 }}>
                 {isMine
                   ? 'Tap a player for his points breakdown, and to bench him.'
@@ -307,12 +472,23 @@ export default function Squad () {
           p={opened} gw={gw} isMine={isMine} busy={saving}
           crestOf={crestOf}
           swapTargets={swapTargets(opened)}
+          swapNote={other => opened.lineup_status === 'starter'
+            ? shapeAfter(opened, other)
+            : shapeAfter(other, opened)}
           onSwap={other => swap(opened.player_id, other)}
           onClose={() => setOpenId(null)} />
       )}
 
       <style>{`
         .squad-grid { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
+        /* Eight cells of "3-4-3" outrun a 300px pitch column, and .seg already
+           scrolls and already brings its selection back into view. */
+        .formations { margin-top: 14px; }
+        /* Unreachable rather than absent: the band is eight shapes whether or
+           not Saturday has happened, and dropping the ones you can't have this
+           afternoon would make the control a different length every day. */
+        .formations button:disabled { opacity: .28; cursor: not-allowed; }
+        .formations button:disabled:hover { background: transparent; color: var(--fg-3); }
         .squad-list-col { max-width: 640px; }
         .sub-badge {
           margin-left: 7px;

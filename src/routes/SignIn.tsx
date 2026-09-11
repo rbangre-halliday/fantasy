@@ -104,7 +104,7 @@ export default function SignIn () {
                 <dl className="mt-40 facts">
                   {[
                     ['16', 'players a squad'],
-                    ['4-4-2', 'every week'],
+                    ['3-5-2', 'if you fancy it'],
                     ['2 min', 'a pick'],
                     ['1', 'owner per player']
                   ].map(([big, small]) => (

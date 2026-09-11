@@ -32,12 +32,16 @@ interface Section {
 
 const no = (text: ReactNode): Clause => ({ text, tone: 'no' })
 
-/** The squad shape, which every other rule on this page follows from. */
-const SHAPE: Array<[string, number, number, number]> = [
-  ['GK', 2, 1, 1],
-  ['DEF', 5, 4, 1],
-  ['MID', 5, 4, 1],
-  ['FWD', 3, 2, 1]
+/**
+ * The squad floor and the XI band, which every other rule on this page follows
+ * from. The bench used to have a column of its own; it no longer has a fixed
+ * shape, because it is whatever your eleven leave behind.
+ */
+const SHAPE: Array<[string, number, string]> = [
+  ['GK', 2, '1'],
+  ['DEF', 5, '3–5'],
+  ['MID', 5, '2–5'],
+  ['FWD', 3, '1–3']
 ]
 
 const SECTIONS: Section[] = [
@@ -74,26 +78,24 @@ const SECTIONS: Section[] = [
     id: 'squad',
     nav: 'Squad',
     title: 'Squad and formation',
-    lede: 'Sixteen players: fifteen the game insists on, and one you place wherever you want him.',
+    lede: 'Sixteen players: fifteen the game insists on and one you place wherever you want him. Eleven of them play, in whatever shape you fancy.',
     before: (
       <div className="rules-shape">
         <table>
-          <caption className="eyebrow">The floor, plus one free</caption>
+          <caption className="eyebrow">The floor, plus one free · eleven of the sixteen play</caption>
           <thead>
             <tr>
               <th scope="col">Position</th>
               <th scope="col">Squad</th>
               <th scope="col">Start</th>
-              <th scope="col">Bench</th>
             </tr>
           </thead>
           <tbody>
-            {SHAPE.map(([pos, squad, start, bench]) => (
+            {SHAPE.map(([pos, squad, start]) => (
               <tr key={pos}>
                 <th scope="row"><span className={`pos ${pos}`}>{pos}</span></th>
                 <td className="num">{squad}</td>
                 <td className="num">{start}</td>
-                <td className="num">{bench}</td>
               </tr>
             ))}
           </tbody>
@@ -102,24 +104,23 @@ const SECTIONS: Section[] = [
               <th scope="row"><span className="pos FLEX">Flex</span></th>
               <td className="num">1</td>
               <td className="num">—</td>
-              <td className="num">1</td>
             </tr>
             <tr>
               <th scope="row">Total</th>
               <td className="num">16</td>
               <td className="num">11</td>
-              <td className="num">5</td>
             </tr>
           </tfoot>
         </table>
       </div>
     ),
     clauses: [
-      { text: <><b>Your XI is always 1 GK, 4 DEF, 4 MID, 2 FWD.</b> There’s no 3-5-2 and no 4-3-3. The only weekly decision is which of your players fill those eleven slots.</> },
+      { text: <><b>Your XI is one keeper and any ten who fit the band:</b> 3 to 5 defenders, 2 to 5 midfielders, 1 to 3 forwards. Eight formations — 3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-2-3, 5-3-2, 5-4-1 — and you can play a different one every week.</>, tone: 'yes' },
+      { text: <><b>Every shape is playable out of every legal squad,</b> whichever position you spent your flex on. The most an XI can ask for is five defenders, five midfielders or three forwards, and the squad floor already holds that many of each.</> },
       { text: <><b>Your five substitutes sit in a numbered order,</b> one to five. That order decides who comes on when the automatic substitutions run.</> },
-      { text: <><b>Four of the bench are one of each</b> — a goalkeeper, a defender, a midfielder and a forward, covering every slot in your XI once.</> },
-      { text: <><b>The fifth is a flex, and he can be anything.</b> A sixth defender, a sixth midfielder, a fourth forward, even a third goalkeeper. Doubling up at a position is how you cover it twice in a week where it blanks twice — and it is the one shape decision that is yours.</> },
-      { text: <><b>So there are four legal squads:</b> 3/5/5/3, 2/6/5/3, 2/5/6/3 and 2/5/5/4. All of them are sixteen; all of them field the same XI.</> },
+      { text: <><b>The bench is whatever your eleven leave.</b> Play 4-3-3 out of a 2/5/5/4 squad and you are covered by a keeper, a defender, two midfielders and a forward. Lean the XI one way and the cover leans the other — which is the real price of a lopsided shape, and worth reading the subs section before you pick one.</> },
+      { text: <><b>The sixteenth man is a flex, and he can be anything.</b> A sixth defender, a sixth midfielder, a fourth forward, even a third goalkeeper. Doubling up at a position is how you cover it twice in a week where it blanks twice.</> },
+      { text: <><b>So there are four legal squads:</b> 3/5/5/3, 2/6/5/3, 2/5/6/3 and 2/5/5/4. All of them are sixteen, and all of them can field all eight formations.</> },
       { text: <><b>A move is legal when what it leaves you with is legal.</b> That is the whole roster rule, and every signing and trade below is only ever this rule applied twice.</> }
     ]
   },
@@ -134,8 +135,10 @@ const SECTIONS: Section[] = [
       { text: <><b>A player whose club has no fixture this gameweek is never locked.</b></> },
       no(<><b>A swap needs both players free.</b> Open a player and pick who takes his place; a locked substitute can no more come in than a locked starter can go out.</>),
       { text: <><b>No transfer costs, no limit on edits.</b> Rearranging your XI is free and unlimited.</>, tone: 'yes' },
-      { text: <><b>Your lineup carries forward.</b> Each new gameweek starts as a copy of the last one, so you only touch it if you want something changed.</> },
-      { text: <><b>Gaps fill themselves.</b> If a player leaves your squad, his slot is taken by the best-ranked eligible player you own — you’re never left with an incomplete XI.</> }
+      { text: <><b>Your formation is as free as your selection,</b> right up to kickoff — 4-4-2 on Friday and 3-5-2 on Saturday morning costs nothing.</>, tone: 'yes' },
+      no(<><b>But a gameweek that has kicked off keeps the shape it kicked off with.</b> Once a ball has been kicked, that week’s swaps are like-for-like — a defender for a defender. The next gameweek is untouched and still free to reshape.</>),
+      { text: <><b>Your lineup carries forward.</b> Each new gameweek starts as a copy of the last one, formation and all, so you only touch it if you want something changed.</> },
+      { text: <><b>Gaps fill themselves, in the shape you chose.</b> If a player leaves your squad his slot goes to the best-ranked eligible player you own at <i>his</i> position — drop a starting defender out of a 3-5-2 and you are still playing 3-5-2.</> }
     ],
     after: (
       <p className="rules-note">
@@ -153,10 +156,11 @@ const SECTIONS: Section[] = [
     clauses: [
       { text: <><b>The trigger is zero minutes, not a bad score.</b> A starter who played and scored one point stays in. A starter who was benched, injured or suspended is replaced.</> },
       { text: <><b>Nothing happens until his match is over.</b> A starter with a Monday night kick-off has no minutes yet, and that is not the same thing as a blank — his slot waits for him.</> },
-      { text: <><b>Same position only,</b> so the formation never changes.</> },
-      { text: <><b>Bench order decides who comes on</b> — the highest-priority substitute in that position who actually played.</> },
+      { text: <><b>Bench order decides who comes on</b> — the first substitute in your order who actually played and who leaves you a legal formation.</> },
+      { text: <><b>A substitute in the same position always qualifies,</b> because he cannot change your shape.</> },
+      { text: <><b>One in a different position qualifies when the band allows it.</b> Playing 4-3-3 and a forward blanks? A midfielder can come on, because 4-4-2 is legal. Playing 3-5-2 and a defender blanks? Only a defender will do — three at the back is the floor, so that is the cover you are choosing to need.</> },
       { text: <><b>Each substitute can only come on once.</b></> },
-      no(<><b>If nobody qualifies, the slot scores zero.</b> Two midfielders blank and only one midfielder on your bench played? The second slot takes a nil.</>)
+      no(<><b>If nobody qualifies, the slot scores zero.</b> Two forwards blank out of a 4-3-3 and one midfielder on your bench played? The first slot is covered and the second takes a nil.</>)
     ]
   },
   {
@@ -172,7 +176,7 @@ const SECTIONS: Section[] = [
       { text: <><b>You can sign anyone, whenever.</b> A player who has already kicked off isn’t off limits — he simply joins your squad next gameweek rather than this one.</>, tone: 'yes' },
       { text: <><b>A gameweek keeps the XI it kicked off with.</b> Drop a man who has already played and his points stay yours; he was yours when he earned them. He’s a free agent immediately, and whoever signs him also only has him from next week, so nobody scores twice off one player.</> },
       { text: <><b>The exception is a like-for-like swap of two players who haven’t played.</b> That one slots straight into this week’s XI — the shape doesn’t move, so nothing has to be recalculated. Your injured Sunday striker can still be replaced on Saturday night.</> },
-      { text: <><b>The new player inherits the dropped player’s slot</b> — starter or bench, same place in your lineup. Where the two play different positions the XI is re-formed around him, so the eleven stay 1/4/4/2.</> },
+      { text: <><b>The new player inherits the dropped player’s slot</b> — starter or bench, same place in your lineup. Where the two play different positions the XI is re-formed around him, so the eleven stay a shape you are allowed to play.</> },
       { text: <><b>The player you drop is a free agent immediately,</b> and anyone can sign him.</> }
     ]
   },
@@ -259,7 +263,7 @@ const ANSWERS: Array<{ q: string; a: string; to: string }> = [
   },
   {
     q: 'What if my starter doesn’t play?',
-    a: 'Your bench covers him automatically — same position, best bench priority, formation unchanged.',
+    a: 'Your bench covers him automatically — the first in your bench order who played and who leaves you a legal formation.',
     to: 'subs'
   },
   {

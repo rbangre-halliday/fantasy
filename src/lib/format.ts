@@ -1,5 +1,5 @@
 import type { Position, SquadPlayer } from './types'
-import { XI_SHAPE } from './types'
+import { POSITIONS, XI_MAX, XI_MIN, XI_SIZE, countByPos } from './types'
 
 export const POS_ORDER: Record<Position, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 }
 
@@ -44,24 +44,23 @@ export function availability (status: string | null): { label: string; tone: str
 }
 
 /**
- * Is this set of starters a legal 4-4-2? Mirrors the check the database runs,
- * so the UI can disable the save button before the round trip.
+ * What is wrong with this XI, in the fewest words that name the fix. Null when
+ * it is one of the eight legal formations. Mirrors the band the database
+ * enforces in set_lineup(), so the screen can say so without a round trip.
+ *
+ * Eleven is checked first because it is the answer to a different question: a
+ * ten-man XI is nobody's formation, and reporting it as "start 1 more DEF"
+ * would send you to the wrong row.
  */
-export function xiIsValid (starters: SquadPlayer[]): boolean {
-  if (starters.length !== 11) return false
-  return (Object.keys(XI_SHAPE) as Position[])
-    .every(p => starters.filter(s => s.position === p).length === XI_SHAPE[p])
-}
-
 export function xiProblem (starters: SquadPlayer[]): string | null {
-  for (const p of Object.keys(XI_SHAPE) as Position[]) {
-    const have = starters.filter(s => s.position === p).length
-    const want = XI_SHAPE[p]
-    if (have !== want) {
-      return have < want
-        ? `Start ${want - have} more ${p}`
-        : `Start ${have - want} fewer ${p}`
-    }
+  if (starters.length !== XI_SIZE) {
+    const short = XI_SIZE - starters.length
+    return short > 0 ? `Start ${short} more` : `Start ${-short} fewer`
+  }
+  const have = countByPos(starters)
+  for (const p of POSITIONS) {
+    if (have[p] < XI_MIN[p]) return `Start ${XI_MIN[p] - have[p]} more ${p}`
+    if (have[p] > XI_MAX[p]) return `Start ${have[p] - XI_MAX[p]} fewer ${p}`
   }
   return null
 }

@@ -18,6 +18,15 @@ type Scope = 'free' | 'dropped' | 'all'
 /** How long a dropped player still counts as news. */
 const JUST_DROPPED_MS = 72 * 3600 * 1000
 
+/** How many past gameweeks the market list shows per player. */
+const RECENT_GWS = 5
+
+/** "Timber", "Timber or Raya", "Timber, Raya or Doku". */
+const joinNames = (names: string[]) =>
+  names.length <= 1
+    ? names.join('')
+    : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`
+
 export default function Players () {
   const { league, me, gameweeks, currentGw, nextGw, refresh } = useLeague()
   const { toast, fail } = useToast()
@@ -32,6 +41,7 @@ export default function Players () {
   const [scope, setScope] = useState<Scope>('free')
   const [query, setQuery] = useState('')
   const [moves, setMoves] = useState<Move[]>([])
+  const [history, setHistory] = useState<Map<number, Map<number, number>>>(new Map())
   const [sort, setSort] = useState<'this' | 'last'>('this')
   const [signing, setSigning] = useState<LeaguePlayer | null>(null)
   const [dropId, setDropId] = useState<number | null>(null)
@@ -46,16 +56,41 @@ export default function Players () {
     [gameweeks, currentGw, nextGw])
 
 
+  // The gameweeks the Recent column shows: the most recent few that have been
+  // scored, oldest first so the row reads left to right like a form guide.
+  // Capped because this is one query over every player in the game.
+  const recentGws = useMemo(() => {
+    const all: number[] = []
+    for (let id = Math.max(1, league.scoring_start_gw); id <= currentGw; id++) {
+      if (gameweeks.some(g => g.id === id)) all.push(id)
+    }
+    return all.slice(-RECENT_GWS)
+  }, [league.scoring_start_gw, currentGw, gameweeks])
+
   const load = useCallback(async () => {
-    const [ps, ms, sq] = await Promise.all([
+    const [ps, ms, sq, hist] = await Promise.all([
       api.getLeaguePlayers(league.id),
       api.getFreeAgentMoves(league.id, 25).catch(() => [] as Move[]),
-      api.getSquad(me.id, swapGw).catch(() => null)
+      api.getSquad(me.id, swapGw).catch(() => null),
+      recentGws.length
+        ? api.getPlayerRecentPoints(recentGws[0], recentGws[recentGws.length - 1])
+            .catch(() => ({} as Record<string, (number | null)[]>))
+        : Promise.resolve({} as Record<string, (number | null)[]>)
     ])
     setPlayers(ps)
     setMoves(ms)
     setSquad(sq)
-  }, [league.id, me.id, swapGw])
+    // player -> gameweek -> points, from the positional array. A null is "did
+    // not feature" and stays out of the map: a dash and a 0 are different
+    // facts and the row draws them differently.
+    const grid = new Map<number, Map<number, number>>()
+    for (const [id, arr] of Object.entries(hist)) {
+      const row = new Map<number, number>()
+      arr.forEach((pts, i) => { if (pts !== null) row.set(recentGws[0] + i, pts) })
+      grid.set(Number(id), row)
+    }
+    setHistory(grid)
+  }, [league.id, me.id, swapGw, recentGws])
 
   useEffect(() => { load().catch(fail) }, [load, fail])
 
@@ -201,6 +236,31 @@ export default function Players () {
   }, [weekUnderway, weekOver, currentGw, nextGw])
 
   /**
+   * Which of the legal drops would still land on the gameweek being played.
+   *
+   * Every droppable player is drawn identically, and once a week is under way
+   * the drops divide into two kinds that look exactly alike: the man whose own
+   * match has yet to kick off, who buys you this gameweek, and everyone else,
+   * who buys you the next one. That is frequently the difference between a
+   * signing that covers a blank and one that does nothing for six days, and
+   * the screen knew it before you clicked and didn't say.
+   *
+   * Empty when the week hasn't started — then every drop lands now and a mark
+   * on all of them says nothing.
+   */
+  const landsNow = useMemo(() => {
+    if (!signing || !weekUnderway) return new Set<number>()
+    return new Set(mine
+      .filter(p => droppable.has(p.id) && landsOn(signing, p) === currentGw)
+      .map(p => p.id))
+  }, [signing, weekUnderway, mine, droppable, landsOn, currentGw])
+
+  // Named, because "one of your defenders" is not a thing anyone can act on.
+  const landsNowNames = useMemo(
+    () => mine.filter(p => landsNow.has(p.id)).map(p => p.web_name),
+    [mine, landsNow])
+
+  /**
    * Start a swap. On a phone the pitch is below the list rather than beside it,
    * so the control the tap just armed would otherwise be off-screen — the tap
    * would look like it had done nothing.
@@ -284,6 +344,13 @@ export default function Players () {
           <div className="thead">
             <span className="grow">Player</span>
             <span style={{ width: 62 }}>Next</span>
+            {/* One cell per gameweek, headed by its number, so a column of
+                scores reads down the list like a printed results grid. */}
+            {recentGws.length > 0 && (
+              <span className="gw-cells" aria-label="Recent gameweeks">
+                {recentGws.map(id => <span key={id} className="gw-cell">{id}</span>)}
+              </span>
+            )}
             {scope === 'all' && <span style={{ width: 76 }}>Owner</span>}
             {seasonUnderway && (
               <button type="button" className={`sort-th ${sort === 'this' ? 'on' : ''}`}
@@ -330,6 +397,20 @@ export default function Players () {
                     <span className="fixture" style={{ width: 62 }}>
                       {fixtureLabel(crests.nextFixture.get(p.team_id ?? -1))}
                     </span>
+                    {recentGws.length > 0 && (
+                      <span className="gw-cells">
+                        {recentGws.map(id => {
+                          const pts = history.get(p.id)?.get(id)
+                          return (
+                            <span key={id}
+                              className={`gw-cell num ${pts === undefined ? 'is-blank' : pts > 0 ? 'has-pts' : ''}`}
+                              title={`GW${id}: ${pts === undefined ? 'did not feature' : `${pts} pts`}`}>
+                              {pts ?? '–'}
+                            </span>
+                          )
+                        })}
+                      </span>
+                    )}
                     {scope === 'all' && (
                       <span className="tiny truncate" style={{ width: 76, color: free ? 'var(--green)' : 'var(--ink-3)' }}>
                         {free ? 'Free' : p.owner_member_id === me.id ? 'You' : p.owner_team_name}
@@ -390,7 +471,8 @@ export default function Players () {
                     onSelect: setDropId,
                     selected: dropId,
                     canSwap: id => droppable.has(id),
-                    dim: id => !droppable.has(id)
+                    dim: id => !droppable.has(id),
+                    note: id => landsNow.has(id) ? `GW${currentGw}` : undefined
                   }
                 : {})} />
           </div>
@@ -402,9 +484,22 @@ export default function Players () {
                   ? <><b>{signing.web_name}</b> in, <b>{dropped.web_name}</b> out
                       {landsOn(signing, dropped) === currentGw
                         ? <> · from GW{currentGw}</>
-                        : <> · from GW{nextGw}, this week’s XI is untouched</>}</>
+                        : <> · from GW{nextGw}, this week’s XI is untouched
+                            {/* The alternative, by name. This is the sentence
+                                whose absence cost a gameweek: the swap was
+                                legal, it just wasn't the one that bought this
+                                week, and the other one was two taps away. */}
+                            {landsNowNames.length > 0 && <>
+                              {' — drop '}<b>{joinNames(landsNowNames)}</b>
+                              {' instead and he plays in GW'}{currentGw}</>}</>}</>
                   : <>Tap anyone still lit to make room. The greyed-out players would
-                      leave you below the 2/5/5/3 minimum somewhere.</>}
+                      leave you below the 2/5/5/3 minimum somewhere.
+                      {weekUnderway && (landsNowNames.length > 0
+                        ? <> Only <b>{joinNames(landsNowNames)}</b>{' '}
+                            {landsNowNames.length === 1 ? 'still buys' : 'still buy'} him for
+                            GW{currentGw} — every other drop is for GW{nextGw}.</>
+                        : <> Every match this week has kicked off, so whoever you drop,
+                            he is yours from GW{nextGw}.</>)}</>}
               </p>
               <div className="row gap-8" style={{ marginTop: 10 }}>
                 <button className="btn ghost" onClick={() => { setSigning(null); setDropId(null) }}>

@@ -962,6 +962,11 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 
 .seg {
   display: flex;
+  /* So that a cell's offsetLeft is measured from the strip and not from
+     whatever happens to be positioned further up the page: Segmented scrolls
+     the selected cell into view off that number, and against the wrong origin
+     a gameweek picker in April scrolls to somewhere past its own end. */
+  position: relative;
   /* Sizes to its buttons, not to its parent — inside a stretching column an
      inline-flex still fills the row and leaves a dead strip of border. */
   width: max-content;
@@ -1956,6 +1961,34 @@ a.list-row.is-you:hover { background: var(--stock-3); }
 .market-meta { flex-wrap: nowrap; overflow: hidden; }
 .market-meta > span { white-space: nowrap; }
 
+/* The season so far, one narrow cell per gameweek, headed by its number. The
+   figures are tabular, so the columns line up down the list and a run of form
+   is visible without reading a single number — which is the whole job. */
+.gw-cells {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+.gw-cell {
+  width: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums lining;
+  color: var(--fg-3);
+}
+/* A score worth having is the thing you are scanning for, so it is the only
+   one at full contrast. A nil stays grey rather than shouting an absence. */
+.list-row .gw-cell.has-pts { color: var(--fg); font-weight: 700; }
+/* No row at all: he did not feature. Pushed back further than a nil, because
+   "didn't play" and "played and scored nothing" are different facts. */
+.list-row .gw-cell.is-blank { color: var(--rule-2); }
+
+/* Below the two-column market the row has to give something up, and five
+   gameweeks of history is the least useful thing on a phone — the season
+   totals and the fixture stay. */
+@media (max-width: 899px) {
+  .gw-cells { display: none; }
+}
+
 /* A feed line is one sentence, so it doesn't need the 56px a tappable player
    row does. */
 .move-row {
@@ -1976,3 +2009,16 @@ a.list-row.is-you:hover { background: var(--stock-3); }
   transition: border-color .16s var(--ease);
 }
 .rules-link:hover { border-bottom-color: var(--uv-lift); }
+
+/* The same link where what it moves you to is a state rather than a page —
+   another gameweek on the screen you are already standing on. A button,
+   because it navigates nowhere; a link to look at, because mid-sentence that
+   is what it reads as. */
+button.rules-link {
+  border: 0;
+  border-bottom: 1px solid var(--uv-line);
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

@@ -6,7 +6,6 @@ export type DraftStatus = 'pending' | 'running' | 'paused' | 'complete'
 export type LineupStatus = 'starter' | 'substitute'
 export type TradeStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled'
 
-/** Squad shape and starting XI — the two numbers the whole game hangs off. */
 /**
  * The squad floor: fifteen of the sixteen. The sixteenth is a flex and may go
  * anywhere, so there is no single "squad shape" any more — 3/5/5/3, 2/6/5/3,
@@ -15,7 +14,21 @@ export type TradeStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled'
 export const POS_MIN: Record<Position, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 }
 /** The most you could ever hold at one position — the floor plus the flex. */
 export const POS_MAX: Record<Position, number> = { GK: 3, DEF: 6, MID: 6, FWD: 4 }
-export const XI_SHAPE: Record<Position, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 }
+/**
+ * The XI is a band rather than a shape: exactly one keeper, three to five
+ * defenders, two to five midfielders, one to three forwards, eleven in all.
+ * Eight formations — 3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-2-3, 5-3-2, 5-4-1.
+ *
+ * Every one of them is playable out of every legal squad by construction, not
+ * by luck: the ceilings sum to 1/5/5/3 and the squad floor is 2/5/5/3, so no
+ * shape can ask for more of a position than a squad must hold. Which is why
+ * nothing here ever has to say "you can't play that formation with this squad".
+ *
+ * Mirrors xi_min() and xi_max() in 19_flex_formations.sql.
+ */
+export const XI_MIN: Record<Position, number> = { GK: 1, DEF: 3, MID: 2, FWD: 1 }
+export const XI_MAX: Record<Position, number> = { GK: 1, DEF: 5, MID: 5, FWD: 3 }
+export const XI_SIZE = 11
 export const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD']
 export const SQUAD_SIZE = 16
 
@@ -64,6 +77,49 @@ export const canSwap = (c: PosCount, add: Position, drop: Position): boolean => 
 export const squadShape = (c: PosCount): PosCount =>
   POSITIONS.reduce((s, p) => ({ ...s, [p]: Math.max(POS_MIN[p], c[p]) }),
     {} as PosCount)
+
+/** Slots to draw for an XI: the shape it is in, never fewer than the floor. */
+export const xiShape = (c: PosCount): PosCount =>
+  POSITIONS.reduce((s, p) => ({ ...s, [p]: Math.max(XI_MIN[p], c[p]) }),
+    {} as PosCount)
+
+/** "3-5-2" — a formation the way it is said, the keeper taken as read. */
+export const formationLabel = (c: PosCount): string => `${c.DEF}-${c.MID}-${c.FWD}`
+
+/**
+ * Every shape the band permits, fewest defenders first — 3-4-3, 3-5-2, 4-3-3,
+ * 4-4-2, 4-5-1, 5-2-3, 5-3-2, 5-4-1.
+ *
+ * Enumerated from XI_MIN/XI_MAX rather than written out, so the list cannot
+ * drift from the rule it illustrates: widen the band and the formations it
+ * implies appear here, on the squad screen and in nothing else that has to be
+ * remembered. The forward count is what is left over once the keeper, the
+ * defenders and the midfielders are counted, which is why only two loops are
+ * needed for three positions.
+ */
+export const FORMATIONS: PosCount[] = (() => {
+  const out: PosCount[] = []
+  for (let def = XI_MIN.DEF; def <= XI_MAX.DEF; def++) {
+    for (let mid = XI_MIN.MID; mid <= XI_MAX.MID; mid++) {
+      const fwd = XI_SIZE - XI_MIN.GK - def - mid
+      if (fwd >= XI_MIN.FWD && fwd <= XI_MAX.FWD) {
+        out.push({ GK: XI_MIN.GK, DEF: def, MID: mid, FWD: fwd })
+      }
+    }
+  }
+  return out
+})()
+
+/**
+ * Can this bench player take that starter's place? Same position always can —
+ * it cannot change the shape, which is why it is also the only swap a gameweek
+ * already under way will accept. Across positions, the man going out has to
+ * leave his position above its floor and the man coming on has to find his
+ * below its ceiling. The server asks the same question in set_lineup() and,
+ * for automatic substitutions, in member_gw_subs().
+ */
+export const canSubIn = (xi: PosCount, out: Position, into: Position): boolean =>
+  out === into || (xi[out] - 1 >= XI_MIN[out] && xi[into] + 1 <= XI_MAX[into])
 
 export interface League {
   id: string

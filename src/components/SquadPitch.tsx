@@ -39,7 +39,7 @@ export default function SquadPitch ({
   // A fixed 2/5/5/4 would now draw an empty forward slot for a squad that has
   // legally spent its flex on a defender instead.
   players, capacity = squadShape(countByPos(players)), compact = false,
-  onSelect, selected, canSwap, points, locked, subbedOut, bench, dim,
+  onSelect, selected, canSwap, points, locked, subbedOut, bench, dim, note,
   bind, dragId, overId
 }: {
   players: PitchPlayer[]
@@ -58,6 +58,12 @@ export default function SquadPitch ({
   bench?: (id: number) => boolean
   /** Not a candidate for whatever is being chosen. Pushed back, not hidden. */
   dim?: (id: number) => boolean
+  /**
+   * A short caption on the slot — the consequence of choosing this one, where
+   * that differs between candidates that otherwise look identical. Used on the
+   * market screen to say which drops still land in the gameweek being played.
+   */
+  note?: (id: number) => string | undefined
   /** Props from useDragSwap that make a slot draggable and droppable. */
   bind?: (id: number) => Record<string, unknown>
   /** The slot currently being dragged, drawn as the hole it left. */
@@ -111,6 +117,7 @@ export default function SquadPitch ({
                 const isSubbed = subbedOut?.(p.id) ?? false
                 const isBench = bench?.(p.id) ?? false
                 const isDim = dim?.(p.id) ?? false
+                const noteText = note?.(p.id)
                 const pts = points?.(p.id)
                 const cls = ['slot', 'filled',
                   isSel && 'is-selected',
@@ -119,6 +126,7 @@ export default function SquadPitch ({
                   isSubbed && 'is-subbed',
                   isBench && 'is-bench',
                   isDim && 'is-dim',
+                  noteText && 'is-noted',
                   dragId === p.id && 'is-dragging',
                   overId === p.id && 'is-over'].filter(Boolean).join(' ')
 
@@ -134,6 +142,7 @@ export default function SquadPitch ({
                     {/* The one thing the pitch could not say before: this man
                         did not play, and the bench has already covered him. */}
                     {isSubbed && <span className="slot-sub">Subbed off</span>}
+                    {noteText && <span className="slot-note">{noteText}</span>}
                     {pts !== undefined
                       ? <span className="slot-pts num">{pts}</span>
                       : (!compact && !p.kit) && <span className="slot-club">{p.club ?? ''}</span>}
@@ -290,6 +299,23 @@ export default function SquadPitch ({
           text-transform: uppercase;
           color: #B79BC6;
         }
+        /* The consequence of picking this slot, where it differs from the one
+           next to it. Green is the palette's "available", which is exactly
+           what it means here: this is the drop that is still open to you for
+           the gameweek being played. The edge carries it too, so the choice is
+           scannable without reading four captions. */
+        .slot.is-noted { border-color: var(--up); }
+        .slot-note {
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: var(--up);
+        }
+        /* Selection outranks the mark: once he is chosen, the slot is the
+           accent block like every other selection in the app. */
+        .slot.is-selected.is-noted { border-color: var(--uv); }
+        .slot.is-selected .slot-note { color: var(--uv-ink); }
         .slot-pts {
           font-size: 11px;
           font-weight: 700;

@@ -27,7 +27,7 @@ then open **SQL Editor** and run every file in `supabase/` **in numeric order**:
 | `supabase/02_rls.sql` | row-level security — read policies only, no write policies |
 | `supabase/03_functions.sql` | the game itself: draft, locking, scoring, trades |
 | `supabase/04_triggers_and_realtime.sql` | signup hook, realtime publication, grants |
-| `supabase/05…10_*.sql` | later features, each one safe to re-run: badges, async drafts, chat, table predictions, the free agent feed, and the points breakdown |
+| `supabase/05…19_*.sql` | later features, each one safe to re-run: badges, async drafts, chat, table predictions, the free agent feed, the points breakdown, automatic substitutions, the flex squad slot, signings that land next gameweek, per-gameweek form, and free formations |
 
 Every file is idempotent, and a later file supersedes anything it redefines — so
 after pulling new code, run the ones you haven't run yet.
@@ -96,8 +96,9 @@ client calls RPCs; it cannot write to a table directly.
 | The pick clock | `drafts.pick_deadline`, compared against `now()` **on the server**. Clients call `draft_tick()` when their own clock runs out; the server re-checks before auto-picking, so an early or duplicated call is a no-op |
 | Auto-pick | `best_available()` — highest previous-season points that still fits the squad |
 | Roster validity | The positional caps (2/5/5/4) sum to exactly 16, so "never exceed a cap" is enough on its own to guarantee a completable squad |
+| Formation | The XI is a band, not a shape: 1 GK, 3–5 DEF, 2–5 MID, 1–3 FWD — eight formations, enforced by `xi_min()`/`xi_max()` in `set_lineup()`. Every one is playable out of every legal squad by construction: the ceilings sum to 1/5/5/3 and the squad floor is 2/5/5/3, so no shape can ask for more of a position than a squad must hold. A gameweek that has kicked off keeps the shape it kicked off with |
 | Player locking | `is_player_locked(player, gw)` — locked from that player's *own* kickoff, in that gameweek only, so next week's XI stays editable while this week runs |
-| Auto-substitutions | `member_gw_subs()` walks the bench in priority order, same position only, formation unchanged. A starter is only a blank once `player_gw_done()` says his match is over — `fixtures.finished_provisional`, not `finished`, which FPL leaves false until bonus is confirmed |
+| Auto-substitutions | `member_gw_subs()` walks the bench in priority order and takes the first substitute who leaves the XI inside the band — the same position always qualifies, another one does when the shape it leaves is still legal. A starter is only a blank once `player_gw_done()` says his match is over — `fixtures.finished_provisional`, not `finished`, which FPL leaves false until bonus is confirmed |
 | Scoring | `player_gw_points` straight from FPL; only gameweeks `>= scoring_start_gw` count. `member_gw_score()` is defined on top of `member_gw_subs()`, so the number and the substitutions the squad screen draws cannot disagree |
 | Played matches | `finished or finished_provisional`, everywhere it matters — the Premier League table predictions are scored against reads the same way |
 

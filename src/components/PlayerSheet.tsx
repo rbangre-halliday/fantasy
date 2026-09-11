@@ -19,13 +19,22 @@ import type { SquadPlayer } from '../lib/types'
  * fixture beside him. Choosing a sub blind was the old flow.
  */
 export default function PlayerSheet ({
-  p, gw, isMine, swapTargets, onSwap, onClose, crestOf, busy
+  p, gw, isMine, swapTargets, swapNote, onSwap, onClose, crestOf, busy
 }: {
   p: SquadPlayer
   gw: number
   isMine: boolean
-  /** Same position, other side of the line, not locked. Empty is normal late. */
+  /**
+   * The other side of the line, not locked, and leaving a legal formation.
+   * Empty is normal late in a gameweek.
+   */
   swapTargets: SquadPlayer[]
+  /**
+   * The formation this swap would leave, where it changes one. A substitution
+   * is no longer always like-for-like, so "4-3-3" is the consequence you most
+   * need before choosing between a midfielder and a forward.
+   */
+  swapNote?: (other: SquadPlayer) => string | undefined
   onSwap: (otherId: number) => void
   onClose: () => void
   crestOf: (p: SquadPlayer) => number | undefined
@@ -115,8 +124,9 @@ export default function PlayerSheet ({
             </Notice>
           ) : swapTargets.length === 0 ? (
             <Notice>
-              Nobody else in your squad can take his place: every other {p.position} is
-              already locked into this gameweek.
+              Nobody in your squad can take his place: anyone who could is either
+              locked into this gameweek already or would leave you a formation you
+              are not allowed to field.
             </Notice>
           ) : (
             <>
@@ -130,6 +140,10 @@ export default function PlayerSheet ({
                       <span className="grow" style={{ minWidth: 0 }}>
                         <span className="name truncate" style={{ display: 'block' }}>{t.web_name}</span>
                         <span className="row gap-6 tiny muted" style={{ marginTop: 2 }}>
+                          <PosChip pos={t.position} />
+                          {/* Only where it changes: a like-for-like swap has no
+                              consequence worth a caption. */}
+                          {swapNote?.(t) && <span className="pd-shape">→ {swapNote(t)}</span>}
                           <span className="club">{t.club_short ?? '—'}</span>
                           <span>{kickoffLabel(t.kickoff)}</span>
                           <span className="fixture">{gwFixtureLabel(t)}</span>
@@ -148,6 +162,8 @@ export default function PlayerSheet ({
                 {isStarter
                   ? 'He takes that player’s place on the bench; that player starts.'
                   : 'He starts; that player takes his place in the bench order.'}
+                {' '}A swap across positions changes your formation, which is fine so
+                long as the shape it leaves is a legal one.
               </p>
             </>
           )}
@@ -171,6 +187,15 @@ export default function PlayerSheet ({
           border-top: 1px solid var(--rule-2);
         }
         .pd-pts { font-weight: 700; font-variant-numeric: tabular-nums; }
+        /* The formation this swap would leave. Accent-tinted rather than muted:
+           it is the one thing on the row that is a consequence and not a fact
+           about the player. */
+        .pd-shape {
+          font-weight: 700;
+          letter-spacing: -.01em;
+          font-variant-numeric: tabular-nums;
+          color: var(--uv);
+        }
       `}</style>
     </Sheet>
   )

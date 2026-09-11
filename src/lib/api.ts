@@ -114,6 +114,19 @@ export const getTradePlayers = (leagueId: string) =>
 export const getFreeAgentMoves = (leagueId: string, limit = 20) =>
   rpc('free_agent_moves', { p_league: leagueId, p_limit: limit }) as Promise<Move[]>
 
+/**
+ * Per-gameweek points for every player, as `{ playerId: [gw, gw, …] }` with the
+ * array positional from `fromGw` and null where he did not feature.
+ *
+ * Deliberately one JSON row rather than a select over player_gw_points: that
+ * table is ~620 rows per gameweek and PostgREST silently truncates any result
+ * set at 1000, so two gameweeks would already have come back a third short —
+ * as blanks, which read as "didn't play". See 18_player_form.sql.
+ */
+export const getPlayerRecentPoints = (fromGw: number, toGw: number) =>
+  rpc('player_recent_points', { p_from: fromGw, p_to: toGw }) as
+    Promise<Record<string, (number | null)[]>>
+
 export const getTransactions = (leagueId: string, limit = 60) =>
   ok<Txn[]>(
     supabase.from('transactions').select('*')
@@ -183,6 +196,17 @@ export const setLineup = (leagueId: string, gw: number, starters: number[], benc
 
 export const ensureLineup = (memberId: string, gw: number) =>
   rpc('ensure_lineup', { p_member: memberId, p_gw: gw })
+
+/**
+ * Has a ball been kicked in this gameweek? A gameweek under way keeps the
+ * shape it kicked off with, so the squad screen has to know before it offers a
+ * substitution that would change the formation. Asked of the server rather
+ * than inferred from kick-off times in the squad: a gameweek can be under way
+ * with none of your own players in it, and guessing would have the screen
+ * offering a swap the server then refuses.
+ */
+export const gwStarted = (gw: number) =>
+  rpc('gw_started', { p_gw: gw }) as unknown as Promise<boolean>
 
 export const addDrop = (leagueId: string, addId: number, dropId: number) =>
   rpc('add_drop', { p_league: leagueId, p_add: addId, p_drop: dropId })
