@@ -188,15 +188,34 @@ export default function SquadPitch ({
       <style>{`
         .pitch {
           position: relative;
-          /* A real pitch is taller than it is wide; holding the ratio is what
-             stops the centre circle stretching into an ellipse. */
-          aspect-ratio: ${ratio};
+          /* A real pitch is taller than it is wide, and holding the ratio is
+             what stops the centre circle stretching into an ellipse — but it is
+             a floor, not a cage. The ratio used to be an aspect-ratio on this
+             box, which made the height a number the contents had to fit inside;
+             a name that wrapped to two lines was then squeezed until its second
+             line was cut through the middle. Everything now stacks in one grid
+             cell: the spacer below asks for the ratio's height, the rows ask for
+             the height they need, and the cell takes whichever is taller.
+             Proportions hold until a slot genuinely needs more room, and then
+             the pitch grows rather than the name losing half its letters. */
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
           min-height: ${cap > 11 ? '330px' : '300px'};
           border: 1px solid var(--rule);
           border-radius: var(--r);
           background: var(--stock-1);
           padding: ${compact ? '14px 10px' : '18px 14px'};
           overflow: hidden;
+        }
+        /* Percentage padding measures the column's width, so this is the
+           ratio expressed as a height. width: 0 keeps it out of the way
+           horizontally; it exists only to put a floor under the grid row. */
+        .pitch::before {
+          content: '';
+          grid-area: 1 / 1;
+          width: 0;
+          align-self: start;
+          padding-top: ${(100 / ratio).toFixed(1)}%;
         }
         .pitch-lines {
           position: absolute;
@@ -211,7 +230,7 @@ export default function SquadPitch ({
         }
         .pitch-rows {
           position: relative;
-          height: 100%;
+          grid-area: 1 / 1;
           display: flex;
           flex-direction: column;
           justify-content: space-around;
@@ -232,8 +251,15 @@ export default function SquadPitch ({
           flex: 1 1 0;
           min-width: 0;
           max-width: 92px;
-          height: ${compact ? '54px' : '58px'};
-          padding: 0 7px;
+          /* A minimum, not a measurement. The slot holds a kit, a name of
+             unknown length, a score, and sometimes a caption as well — four
+             things whose height is decided by the data, inside what used to be
+             a fixed 58px. A wrapped name overflowed it, and because these are
+             flex children the name was shrunk to make room and clipped by its
+             own overflow. The row stretches its slots to match each other, so
+             one long name still leaves a tidy line of equal boxes. */
+          min-height: ${compact ? '54px' : '58px'};
+          padding: 2px 7px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -292,8 +318,12 @@ export default function SquadPitch ({
            Dimming would say the first thing. */
         .slot.is-subbed .slot-name { text-decoration: line-through; opacity: .6; }
         .slot.is-subbed .slot-pts { opacity: .5; }
+        /* Captions set their own leading. The page's 1.5 is for reading, and a
+           nine-pixel caption that wraps was spending twenty-seven pixels of a
+           slot to say two words. */
         .slot-sub {
           font-size: 9px;
+          line-height: 1.15;
           font-weight: 700;
           letter-spacing: .06em;
           text-transform: uppercase;
@@ -307,6 +337,7 @@ export default function SquadPitch ({
         .slot.is-noted { border-color: var(--up); }
         .slot-note {
           font-size: 9px;
+          line-height: 1.15;
           font-weight: 700;
           letter-spacing: .06em;
           text-transform: uppercase;
@@ -318,6 +349,7 @@ export default function SquadPitch ({
         .slot.is-selected .slot-note { color: var(--uv-ink); }
         .slot-pts {
           font-size: 11px;
+          line-height: 1.2;
           font-weight: 700;
           color: #B79BC6;
         }
@@ -325,6 +357,10 @@ export default function SquadPitch ({
            clipped to "Mathe…" is not a player anyone can identify, and the
            slot has the height to spare once the club line is optional. */
         .slot-name {
+          /* Never shrunk. A flex child with overflow: hidden that is allowed to
+             shrink does not ellipsis — it cuts a line of text through the
+             middle, which is what "Gibbs-/White" was. */
+          flex: none;
           font-size: ${compact ? '10px' : '11px'};
           font-weight: 650;
           line-height: 1.06;
