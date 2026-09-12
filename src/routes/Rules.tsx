@@ -200,7 +200,9 @@ const SECTIONS: Section[] = [
       { text: <><b>Positions don’t have to match.</b> <i>Saka</i> for <i>Saliba</i> is a real offer now — whether it goes through depends on where the two of you keep your flex, not on the trade.</>, tone: 'yes' },
       no(<><b>Both squads have to survive it.</b> A trade that would leave either manager below the floor at any position is refused, whichever side of it they are on.</>),
       no(<><b>Same number both ways.</b> Squads are sixteen, so one for one, two for two, or three for three.</>),
-      { text: <><b>A trade involving someone who has played lands next gameweek</b> — for both sides at once, never one squad this week and the other the next.</> },
+      { text: <><b>The players change hands the moment the trade is accepted.</b> Which gameweek they can play in for you is the separate question below.</> },
+      { text: <><b>A trade lands on the first gameweek that hasn’t kicked off</b> — for both sides at once, never one squad this week and the other the next. Trade on the Tuesday and both XIs re-form around it for the coming gameweek, which is rather the point of trading.</>, tone: 'yes' },
+      no(<><b>A gameweek already under way keeps the eleven it kicked off with.</b> That holds whether or not the men in the trade have played: a player you send stays in that week’s XI and his points go to the manager who picked him, and the player you get is yours from the next gameweek.</>),
       no(<><b>Both squads are checked when the trade is proposed and again when it’s accepted.</b> Somebody else’s signing in between can make a pending offer illegal, and it will be refused rather than quietly applied.</>),
       { text: <><b>Only the receiving manager can accept or reject;</b> only the proposer can cancel.</> },
       { text: <><b>Accepting kills the competing offers.</b> Any other pending trade involving a player who just moved is cancelled automatically.</> }

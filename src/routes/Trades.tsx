@@ -280,12 +280,20 @@ function Composer ({
           </button>
         </>
       }>
+      {/* What lands when. The players move at once; which eleven they can play
+          in is the separate question, and it turns on whether the gameweek has
+          kicked off — not on whether the men in the trade have played. A trade
+          accepted on the Tuesday re-forms both XIs for the coming gameweek,
+          which is the whole reason to make one. */}
       <Notice>
         Up to three each way, and the same number both ways. Positions don’t have to
         match — every squad carries at least 2 GK, 5 DEF, 5 MID and 3 FWD, and the
         sixteenth player is a flex, so a trade goes through whenever both squads are
-        left legal. A trade involving anyone who has already played takes effect next
-        gameweek; this week’s XIs are untouched either way.
+        left legal. The players change hands the moment it’s accepted, and both XIs
+        re-form around it in the first gameweek that hasn’t kicked off. A gameweek
+        already under way keeps the eleven it started with: anyone you send stays in
+        that week’s XI, scoring for the manager who picked him, and anyone you get is
+        yours from the next one.
       </Notice>
 
       <div className="mt-24">
