@@ -213,7 +213,7 @@ begin
   -- After the delete a 3-5-2 that has lost a defender is indistinguishable
   -- from a 2-5-2 nobody ever chose, and refilling it by rank would quietly
   -- reshape the team of anyone who had stopped playing four at the back.
-  select coalesce(jsonb_object_agg(pos, n), '{}'::jsonb) into shape
+  select coalesce(jsonb_object_agg(t.pos, t.n), '{}'::jsonb) into shape
     from (select p.position::text as pos, count(*)::int as n
             from lineups ln join epl_players p on p.id = ln.player_id
            where ln.member_id = p_member and ln.gw = p_gw and ln.status = 'starter'
@@ -343,7 +343,7 @@ declare
   st    record;
   sub   record;
 begin
-  select coalesce(jsonb_object_agg(pos, n), '{}'::jsonb) into shape
+  select coalesce(jsonb_object_agg(t.pos, t.n), '{}'::jsonb) into shape
     from (select p.position::text as pos, count(*)::int as n
             from lineups ln join epl_players p on p.id = ln.player_id
            where ln.member_id = p_member and ln.gw = p_gw and ln.status = 'starter'
