@@ -134,6 +134,7 @@ const SECTIONS: Section[] = [
       { text: <><b>Locking is per player, not a league deadline.</b> If your Saturday lunchtime midfielder has played, your Monday night striker is still free to move.</> },
       { text: <><b>A player whose club has no fixture this gameweek is never locked.</b></> },
       no(<><b>A swap needs both players free.</b> Open a player and pick who takes his place; a locked substitute can no more come in than a locked starter can go out.</>),
+      no(<><b>Bench order locks the same way.</b> Your order decides who covers a blank, so it’s part of the lineup: a substitute whose own match has kicked off keeps his place in it. Two who are both still to play can be reordered right up to their kickoffs — neither of them can come on yet, so nothing is settled by it.</>),
       { text: <><b>No transfer costs, no limit on edits.</b> Rearranging your XI is free and unlimited.</>, tone: 'yes' },
       { text: <><b>Your formation is as free as your selection,</b> right up to kickoff — 4-4-2 on Friday and 3-5-2 on Saturday morning costs nothing.</>, tone: 'yes' },
       no(<><b>But a gameweek that has kicked off keeps the shape it kicked off with.</b> Once a ball has been kicked, that week’s swaps are like-for-like — a defender for a defender. The next gameweek is untouched and still free to reshape.</>),
@@ -161,7 +162,15 @@ const SECTIONS: Section[] = [
       { text: <><b>One in a different position qualifies when the band allows it.</b> Playing 4-3-3 and a forward blanks? A midfielder can come on, because 4-4-2 is legal. Playing 3-5-2 and a defender blanks? Only a defender will do — three at the back is the floor, so that is the cover you are choosing to need.</> },
       { text: <><b>Each substitute can only come on once.</b></> },
       no(<><b>If nobody qualifies, the slot scores zero.</b> Two forwards blank out of a 4-3-3 and one midfielder on your bench played? The first slot is covered and the second takes a nil.</>)
-    ]
+    ],
+    after: (
+      <p className="rules-note">
+        <b>A gameweek is subbed under the rules in force when it kicked off.</b> Cover
+        from another position arrived with free formations, and the weeks played before
+        that were covered same-position only. They keep the substitutions they were
+        played under, and the scores that went with them.
+      </p>
+    )
   },
   {
     id: 'market',

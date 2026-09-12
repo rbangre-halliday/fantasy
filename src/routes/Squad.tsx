@@ -233,11 +233,27 @@ export default function Squad () {
     locked: id => !isMine || !!(squad ?? []).find(p => p.player_id === id)?.locked
   })
 
+  /**
+   * Can this substitute move a place? The bench order is what decides who
+   * covers a blank, so it is part of the lineup and locks the way the rest of
+   * it does: a man whose match has kicked off cannot be moved past another man
+   * whose match has kicked off. That would be choosing the substitution after
+   * watching the football. Two who are both still to play may swap all week —
+   * neither of them can come on, so nothing about the week turns on it.
+   *
+   * Mirrors the check in set_lineup(); see 20_settled_subs.sql.
+   */
+  const canMoveBench = (i: number, dir: -1 | 1) => {
+    const a = bench[i]
+    const b = bench[i + dir]
+    return !!a && !!b && !(a.locked && b.locked)
+  }
+
   function moveBench (playerId: number, dir: -1 | 1) {
     const order = bench.map(p => p.player_id)
     const i = order.indexOf(playerId)
     const j = i + dir
-    if (j < 0 || j >= order.length) return
+    if (j < 0 || j >= order.length || !canMoveBench(i, dir)) return
     ;[order[i], order[j]] = [order[j], order[i]]
     const next = squad!.map(p => {
       const idx = order.indexOf(p.player_id)
@@ -439,10 +455,16 @@ export default function Squad () {
                       trailing={isMine ? (
                         <span className="row-aside">
                           <button className="nudge" aria-label={`Move ${p.web_name} up the bench`}
-                            disabled={i === 0 || saving}
+                            disabled={i === 0 || saving || !canMoveBench(i, -1)}
+                            title={i > 0 && !canMoveBench(i, -1)
+                              ? 'Both matches have kicked off, so this order is settled.'
+                              : undefined}
                             onClick={() => moveBench(p.player_id, -1)}><IconChevron dir="up" size={13} /></button>
                           <button className="nudge" aria-label={`Move ${p.web_name} down the bench`}
-                            disabled={i === bench.length - 1 || saving}
+                            disabled={i === bench.length - 1 || saving || !canMoveBench(i, 1)}
+                            title={i < bench.length - 1 && !canMoveBench(i, 1)
+                              ? 'Both matches have kicked off, so this order is settled.'
+                              : undefined}
                             onClick={() => moveBench(p.player_id, 1)}><IconChevron dir="down" size={13} /></button>
                         </span>
                       ) : undefined} />
@@ -452,6 +474,8 @@ export default function Squad () {
                   If a starter doesn’t play, the first eligible substitute in this order
                   takes their place automatically — once that starter’s match is over,
                   not before it kicks off.
+                  {frozen && ' A substitute whose own match has started keeps his place'
+                    + ' in the order: the cover is decided before the football, not after.'}
                 </p>
               </div>
             </div>

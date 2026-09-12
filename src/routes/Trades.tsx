@@ -53,7 +53,8 @@ export default function Trades () {
       <PageHead
         title="Trades"
         meta={<>
-          Up to three each way, positions matched. No vetoes, no committee.{' '}
+          Up to three each way, same number both ways. Positions don’t have to match —
+          what counts is the squad each side is left holding. No vetoes, no committee.{' '}
           <Link className="rules-link" to="/rules#trades">Trade rules</Link>
         </>} />
 
@@ -299,7 +300,10 @@ function Composer ({
 
       {balance.length > 0 && (offer.length > 0 || request.length > 0) && (
         <div className="mt-16">
-          <Notice kind="warn">Positions don’t match: {balance.join(', ')}</Notice>
+          {/* Not "positions don't match" any more — they don't have to. What can
+              be wrong with an offer now is the count, or the squad it would
+              leave one of the two managers holding. */}
+          <Notice kind="warn">You can’t offer that: {balance.join(', ')}.</Notice>
         </div>
       )}
     </Sheet>
